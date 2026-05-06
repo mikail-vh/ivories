@@ -36,6 +36,41 @@ export type StickyNote = {
   h: number;
 };
 
+export type SectionPosition = {
+  x: number;
+  y: number;
+  w: number;
+};
+
+export type SongArrangement = {
+  /* Section IDs in user's display order. When `arrangement` is undefined the
+   * UI uses the natural parser order (auto layout); when defined, sections not
+   * listed here go to the tray of unplaced cards. An empty `placed` array is
+   * "cleared" — the canvas is blank and every section sits in the tray. */
+  placed: string[];
+  /* Free-flow positions (canvas coords, px) per section ID. Snapshotted from
+   * the auto grid layout when the user enters customize mode and updated as
+   * they drag cards around. Sections without an entry fall back to a
+   * default cascade position. */
+  positions?: Record<string, SectionPosition>;
+};
+
+/* Roadmap: a per-song outline that lists which sections play, in what order,
+ * and any free-text notes between them. Shown as a movable thin panel; can be
+ * toggled on/off. Each section can appear any number of times — consecutive
+ * repeats render as one block with a `× N` count. */
+export type RoadmapItem =
+  | { id: string; kind: 'section'; sectionId: string }
+  | { id: string; kind: 'note'; text: string };
+
+export type SongRoadmap = {
+  enabled: boolean;
+  items: RoadmapItem[];
+  /* Where the user has dragged the panel. Falls back to a sensible default
+   * (top-left of the song area) when undefined. */
+  position?: { x: number; y: number };
+};
+
 export type Song = {
   id: string;
   title: string;
@@ -46,9 +81,21 @@ export type Song = {
   body: string;
   transpose: number;
   notes: StickyNote[];
+  arrangement?: SongArrangement;
+  roadmap?: SongRoadmap;
   createdAt: number;
   updatedAt: number;
 };
+
+/* Section title for display: prefer the leading comment line (e.g. "Verse 1"),
+ * fall back to capitalised parser name. Used by both `SectionView` and the
+ * roadmap panel so labels stay in sync. */
+export function sectionDisplayLabel(section: Section): string {
+  const titleLine = section.lines.find((l) => l.kind !== 'blank');
+  if (titleLine?.kind === 'comment' && titleLine.text) return titleLine.text;
+  if (section.name === 'verse') return 'Section';
+  return section.name.charAt(0).toUpperCase() + section.name.slice(1);
+}
 
 export type SongMeta = Pick<Song, 'id' | 'title' | 'artist' | 'key' | 'updatedAt'>;
 
@@ -172,18 +219,44 @@ export function chordSymbolToTitle(sym: string): string {
   return NOTE_NAMES_SHARP[p.rootPc] + p.quality;
 }
 
+export function applyArrangement(
+  sections: Section[],
+  arrangement: SongArrangement | undefined,
+): { placed: Section[]; tray: Section[] } {
+  if (!arrangement) return { placed: sections, tray: [] };
+  const byId = new Map(sections.map((s) => [s.id, s]));
+  const placed = arrangement.placed
+    .map((id) => byId.get(id))
+    .filter((s): s is Section => s !== undefined);
+  const placedIds = new Set(arrangement.placed);
+  const tray = sections.filter((s) => !placedIds.has(s.id));
+  return { placed, tray };
+}
+
 export function uniqueChordsInSong(song: Song): { sym: string; rootPc: number; intervals: number[] }[] {
   const seen = new Map<string, { sym: string; rootPc: number; intervals: number[] }>();
   const sections = parseChordPro(song.body).sections;
+  const addSym = (sym: string) => {
+    if (seen.has(sym)) return;
+    const r = resolveChord(sym);
+    if (!r) return;
+    seen.set(sym, { sym, rootPc: r.rootPc, intervals: r.intervals });
+  };
   for (const sec of sections) {
     for (const line of sec.lines) {
       for (const tok of line.tokens) {
         if (tok.kind !== 'chord') continue;
         const transposed = transposeChord(tok.text, song.transpose);
-        if (seen.has(transposed)) continue;
-        const r = resolveChord(transposed);
-        if (!r) continue;
-        seen.set(transposed, { sym: transposed, rootPc: r.rootPc, intervals: r.intervals });
+        const slash = transposed.indexOf('/');
+        if (slash > 0 && slash < transposed.length - 1) {
+          /* Slash chords (`B/D#`) split into their two parts in the palette
+           * — never the combined slash form. Each part stands alone so users
+           * can audition both halves independently. */
+          addSym(transposed.slice(0, slash));
+          addSym(transposed.slice(slash + 1));
+        } else {
+          addSym(transposed);
+        }
       }
     }
   }
@@ -253,6 +326,22 @@ const SECTION_DIRECTIVES: Record<string, string> = {
 };
 const SECTION_END = new Set(['eoc', 'end_of_chorus', 'eov', 'end_of_verse', 'eob', 'end_of_bridge']);
 
+/* Many songs use `{c: Verse 1}` / `{comment: Chorus}` instead of the proper
+ * `{sov}` / `{soc}` directives, leaving the parser with a single mega-section.
+ * Treat header-shaped comments as section breaks so layout/styling can group
+ * by section and the renderer can promote the comment to a section title. */
+const SECTION_HEADER_RE =
+  /^(?:verse|chorus|pre[- ]?chorus|bridge|intro|outro|tag|refrain|solo|interlude|ending|coda|hook|breakdown)\b/i;
+
+function sectionNameFromComment(value: string): string | null {
+  const m = value.match(SECTION_HEADER_RE);
+  if (!m) return null;
+  const word = m[0].toLowerCase().replace(/[\s-]/g, '');
+  if (word === 'chorus') return 'chorus';
+  if (word === 'bridge') return 'bridge';
+  return 'verse';
+}
+
 export function parseChordPro(src: string): {
   meta: { title?: string; artist?: string; key?: string; tempo?: string; capo?: string };
   sections: Section[];
@@ -284,6 +373,11 @@ export function parseChordPro(src: string): {
       else if (key === 'tempo') meta.tempo = value;
       else if (key === 'capo') meta.capo = value;
       else if (key === 'comment' || key === 'c') {
+        const headerName = sectionNameFromComment(value);
+        if (headerName !== null) {
+          if (current.lines.length === 0) current.name = headerName;
+          else current = newSection(headerName);
+        }
         current.lines.push({ id: `${current.id}:l${lIdx++}`, kind: 'comment', tokens: [], text: value });
       } else if (SECTION_DIRECTIVES[key]) {
         current = newSection(SECTION_DIRECTIVES[key]);
@@ -305,7 +399,12 @@ export function parseChordPro(src: string): {
     });
   }
 
-  return { meta, sections: sections.filter(s => s.lines.length > 0) };
+  /* Drop sections that contain only blank lines (e.g. a leading blank before
+   * the first `{c: Intro}` would otherwise create an empty card on the canvas). */
+  return {
+    meta,
+    sections: sections.filter((s) => s.lines.some((l) => l.kind !== 'blank')),
+  };
 }
 
 function parseInlineLine(line: string): Token[] {

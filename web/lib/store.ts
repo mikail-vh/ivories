@@ -29,6 +29,9 @@ export const AUDIO_DEFAULTS: AudioSettings = {
   audioReverbSize: 2.0,
 };
 
+export type GridPreset = 'auto' | '2col' | '3col';
+export type LyricSize = 'sm' | 'md' | 'lg';
+
 type State = {
   pages: FavPage[];
   activePageId: string;
@@ -37,7 +40,18 @@ type State = {
   compact: boolean;
   theme: 'dark' | 'light';
   showChordPalette: boolean;
+  /* "Compact" keeps the song-page centered at 1280/1800 max-width; "expanded"
+   * lets it fill the full viewport. Used to be called `chordPaletteFloating`
+   * since its visible effect was to give the palette more room — but it's
+   * really a page-width toggle, applied independently of palette side. */
+  layoutExpanded: boolean;
+  chordPaletteSide: 'left' | 'right';
   songLayout: 'flow' | 'grid';
+  songGridPreset: GridPreset;
+  /* Lyric/chord font size for the song body. Smaller = more lines fit per
+   * card and longer lines are less likely to wrap. Applied as a CSS variable
+   * on the song-page so all chunk text scales together. */
+  lyricSize: LyricSize;
 } & AudioSettings;
 
 type Actions = {
@@ -47,6 +61,10 @@ type Actions = {
   toggleTheme: () => void;
   toggleChordPalette: () => void;
   setSongLayout: (layout: 'flow' | 'grid') => void;
+  setGridPreset: (preset: GridPreset) => void;
+  setLayoutExpanded: (expanded: boolean) => void;
+  setChordPaletteSide: (side: 'left' | 'right') => void;
+  setLyricSize: (size: LyricSize) => void;
 
   isFavorited: (item: FavoriteItem) => boolean;
   toggleFavorite: (item: FavoriteItem) => void;
@@ -73,7 +91,11 @@ export const useAppStore = create<State & Actions>()(
       compact: false,
       theme: 'dark',
       showChordPalette: true,
+      layoutExpanded: false,
+      chordPaletteSide: 'right',
       songLayout: 'flow',
+      songGridPreset: 'auto',
+      lyricSize: 'md',
       ...AUDIO_DEFAULTS,
 
       setActiveTab: (tab) => set({ activeTab: tab }),
@@ -82,6 +104,10 @@ export const useAppStore = create<State & Actions>()(
       toggleTheme: () => set({ theme: get().theme === 'dark' ? 'light' : 'dark' }),
       toggleChordPalette: () => set({ showChordPalette: !get().showChordPalette }),
       setSongLayout: (layout) => set({ songLayout: layout }),
+      setGridPreset: (preset) => set({ songGridPreset: preset }),
+      setLayoutExpanded: (expanded) => set({ layoutExpanded: expanded }),
+      setChordPaletteSide: (side) => set({ chordPaletteSide: side }),
+      setLyricSize: (size) => set({ lyricSize: size }),
 
       isFavorited: (item) => {
         const page = get().pages.find(p => p.id === get().activePageId);
