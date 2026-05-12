@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSongList, songsRepo, rehydrateSongs } from '@/lib/storage';
+import { handleAuthCallback } from '@/lib/spotify-auth';
 import { ImportDialog } from './ImportDialog';
 
 export function SongsIndex() {
@@ -12,6 +13,15 @@ export function SongsIndex() {
 
   useEffect(() => {
     rehydrateSongs().then(() => setHydrated(true));
+  }, []);
+
+  /* /songs is the registered Spotify redirect URI. If we arrive here with a
+   * `?code=` query string, finish the OAuth handshake and jump back to the
+   * song page the user kicked off from. */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!new URLSearchParams(window.location.search).has('code')) return;
+    handleAuthCallback().catch(() => { /* leave the user on /songs */ });
   }, []);
 
   return (

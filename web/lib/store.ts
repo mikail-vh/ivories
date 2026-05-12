@@ -52,6 +52,9 @@ type State = {
    * card and longer lines are less likely to wrap. Applied as a CSS variable
    * on the song-page so all chunk text scales together. */
   lyricSize: LyricSize;
+  /* Spotify embed volume (0..1). Persisted so users don't have to drop it
+   * every time they open a song. Applied via the IFrame Embed API. */
+  spotifyVolume: number;
 } & AudioSettings;
 
 type Actions = {
@@ -65,6 +68,7 @@ type Actions = {
   setLayoutExpanded: (expanded: boolean) => void;
   setChordPaletteSide: (side: 'left' | 'right') => void;
   setLyricSize: (size: LyricSize) => void;
+  setSpotifyVolume: (volume: number) => void;
 
   isFavorited: (item: FavoriteItem) => boolean;
   toggleFavorite: (item: FavoriteItem) => void;
@@ -96,6 +100,7 @@ export const useAppStore = create<State & Actions>()(
       songLayout: 'flow',
       songGridPreset: 'auto',
       lyricSize: 'md',
+      spotifyVolume: 0.7,
       ...AUDIO_DEFAULTS,
 
       setActiveTab: (tab) => set({ activeTab: tab }),
@@ -108,6 +113,7 @@ export const useAppStore = create<State & Actions>()(
       setLayoutExpanded: (expanded) => set({ layoutExpanded: expanded }),
       setChordPaletteSide: (side) => set({ chordPaletteSide: side }),
       setLyricSize: (size) => set({ lyricSize: size }),
+      setSpotifyVolume: (volume) => set({ spotifyVolume: Math.max(0, Math.min(1, volume)) }),
 
       isFavorited: (item) => {
         const page = get().pages.find(p => p.id === get().activePageId);

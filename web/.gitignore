@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude / mcp
+.claude/settings.local.json
+.playwright-mcp/
+
+# test artifacts
+chords-*.png
+chords-*.jpeg
+song-*.png
+song-*.jpeg
+tablet-*.png
+tablet-*.jpeg
+spotify-*.png
+spotify-*.jpeg

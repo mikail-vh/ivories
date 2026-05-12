@@ -54,6 +54,20 @@ export function Roadmap({ roadmap, sections, onChange, onClose }: Props) {
     };
   }, [onClose]);
 
+  /* Compute a sensible default position when the user hasn't dragged the
+   * panel yet: anchor below the song body's top, so we don't cover the title
+   * or chord palette. Falls back to a viewport-relative default if the body
+   * isn't measurable yet. */
+  const defaultPosition = () => {
+    if (typeof window === 'undefined') return { x: 16, y: 90 };
+    const body = document.querySelector<HTMLElement>('.song-body');
+    if (body) {
+      const r = body.getBoundingClientRect();
+      return { x: 16, y: Math.max(90, Math.round(r.top + 8)) };
+    }
+    return { x: 16, y: 90 };
+  };
+
   /* Clamp the stored position into the viewport on mount and on resize.
    * If the user dragged the panel off-screen at one viewport size and then
    * resized smaller (or the panel was hidden and shown again at a different
@@ -69,7 +83,7 @@ export function Roadmap({ roadmap, sections, onChange, onClose }: Props) {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const margin = 120;
-      const stored = roadmap.position ?? { x: 16, y: 90 };
+      const stored = roadmap.position ?? defaultPosition();
       const x = Math.max(8, Math.min(stored.x, vw - margin));
       const y = Math.max(60, Math.min(stored.y, vh - margin));
       /* If the panel would be entirely off-screen even after clamping the
@@ -128,8 +142,9 @@ export function Roadmap({ roadmap, sections, onChange, onClose }: Props) {
     handle.setPointerCapture(e.pointerId);
     const startX = e.clientX;
     const startY = e.clientY;
-    const baseX = roadmap.position?.x ?? 16;
-    const baseY = roadmap.position?.y ?? 90;
+    const fallback = defaultPosition();
+    const baseX = roadmap.position?.x ?? fallback.x;
+    const baseY = roadmap.position?.y ?? fallback.y;
     const panel = panelRef.current;
     let curX = baseX;
     let curY = baseY;
@@ -153,7 +168,7 @@ export function Roadmap({ roadmap, sections, onChange, onClose }: Props) {
     handle.addEventListener('pointercancel', up);
   };
 
-  const pos = roadmap.position ?? { x: 16, y: 90 };
+  const pos = roadmap.position ?? defaultPosition();
 
   return (
     <aside

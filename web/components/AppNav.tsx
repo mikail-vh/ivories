@@ -26,7 +26,10 @@ export function AppNav() {
 
   return (
     <nav className="app-nav">
-      <Link href="/" className="brand">🎹 <span className="accent">Music</span></Link>
+      <Link href="/" className="brand" aria-label="Music — home">
+        <span aria-hidden="true">🎹</span>
+        <span className="accent brand-text">Music</span>
+      </Link>
       <div className="section-links">
         {SECTIONS.map(s => {
           const active = pathname === s.href || pathname.startsWith(s.href + '/');
