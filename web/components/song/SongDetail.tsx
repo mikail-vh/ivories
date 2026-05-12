@@ -19,7 +19,9 @@ import { NOTE_NAMES_SHARP } from '@/lib/music';
 import { SongRenderer, type CanvasHandlers } from './SongRenderer';
 import { ChordPalette } from './ChordPalette';
 import { Roadmap } from './Roadmap';
+import { SpotifyPanel } from './SpotifyPanel';
 import { StickyNote, NOTE_COLORS } from './StickyNote';
+import { extractTrackId } from '@/lib/spotify';
 import type { GridPreset, LyricSize } from '@/lib/store';
 
 export function SongDetail({ id }: { id: string }) {
@@ -338,6 +340,8 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
             highlight={draggingSection}
           />
         )}
+
+        <SpotifyPanel song={song} onChange={updateSong} />
 
         {editingBody ? (
           <BodyEditor
@@ -819,6 +823,10 @@ function MetaEditor({
   const [artist, setArtist] = useState(song.artist ?? '');
   const [key, setKey] = useState(song.key ?? '');
   const [tempo, setTempo] = useState(song.tempo ?? '');
+  const [spotify, setSpotify] = useState(song.spotifyTrackId ?? '');
+  const spotifyTrimmed = spotify.trim();
+  const spotifyParsed = spotifyTrimmed ? extractTrackId(spotifyTrimmed) : null;
+  const spotifyInvalid = spotifyTrimmed !== '' && spotifyParsed === null;
 
   return (
     <div className="meta-editor">
@@ -840,14 +848,33 @@ function MetaEditor({
           <input value={tempo} onChange={(e) => setTempo(e.target.value)} placeholder="bpm" />
         </label>
       </div>
+      <label className="field">
+        <span className="field-label">
+          Spotify URL <span className="field-hint">paste an open.spotify.com link, or leave blank to use search</span>
+        </span>
+        <input
+          value={spotify}
+          onChange={(e) => setSpotify(e.target.value)}
+          placeholder="https://open.spotify.com/track/…"
+          aria-invalid={spotifyInvalid || undefined}
+        />
+        {spotifyInvalid && (
+          <span className="field-error">Doesn&apos;t look like a Spotify track link.</span>
+        )}
+      </label>
       <div className="meta-editor-actions">
         <button className="btn-ghost" onClick={onCancel}>Cancel</button>
-        <button className="btn-primary" onClick={() => onSave({
-          title: title.trim() || song.title,
-          artist: artist.trim() || undefined,
-          key: key.trim() || undefined,
-          tempo: tempo.trim() || undefined,
-        })}>Save</button>
+        <button
+          className="btn-primary"
+          disabled={spotifyInvalid}
+          onClick={() => onSave({
+            title: title.trim() || song.title,
+            artist: artist.trim() || undefined,
+            key: key.trim() || undefined,
+            tempo: tempo.trim() || undefined,
+            spotifyTrackId: spotifyParsed ?? undefined,
+          })}
+        >Save</button>
       </div>
     </div>
   );

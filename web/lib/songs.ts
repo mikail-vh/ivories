@@ -83,6 +83,7 @@ export type Song = {
   notes: StickyNote[];
   arrangement?: SongArrangement;
   roadmap?: SongRoadmap;
+  spotifyTrackId?: string;
   createdAt: number;
   updatedAt: number;
 };
