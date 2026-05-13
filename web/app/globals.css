@@ -912,10 +912,51 @@ body.light .chip { color: #8a5a00; }
   align-items: baseline;
   gap: 8px;
 }
+/* When a label is split into a header row + hint row (e.g. with an "Upload
+ * file" action on the right), stack them vertically instead of inline. */
+.field-label:has(.field-label-row) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.field-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-elev-2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.field-action:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
 .field-hint {
   font-size: 0.75rem;
   font-weight: 400;
   color: var(--text-dim);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .field input,
 .field textarea,

@@ -14,6 +14,7 @@ export function ImportDialog({ onClose, onCreated }: Props) {
   const [body, setBody] = useState('');
   const [dragging, setDragging] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     textareaRef.current?.focus();
@@ -80,9 +81,25 @@ export function ImportDialog({ onClose, onCreated }: Props) {
 
           <label className="field">
             <span className="field-label">
-              Lyrics & chords
-              <span className="field-hint">paste ChordPro, OnSong, or chord-line-above-lyric — drop a file too</span>
+              <span className="field-label-row">
+                <span>Lyrics & chords</span>
+                <button
+                  type="button"
+                  className="field-action"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <UploadIcon /> Upload file
+                </button>
+              </span>
+              <span className="field-hint">paste, drag a file in, or tap upload</span>
             </span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt,.chordpro,.crd,.cho,.pro,.tab,text/plain"
+              className="visually-hidden"
+              onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }}
+            />
             <textarea
               ref={textareaRef}
               value={body}
@@ -110,5 +127,15 @@ export function ImportDialog({ onClose, onCreated }: Props) {
         </footer>
       </div>
     </div>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 16V4M7 9l5-5 5 5" />
+      <path d="M5 20h14" />
+    </svg>
   );
 }
