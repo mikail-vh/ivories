@@ -96,7 +96,7 @@ export function ImportDialog({ onClose, onCreated }: Props) {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".txt,.chordpro,.crd,.cho,.pro,.tab,text/plain"
+              accept=".txt,.chordpro,.crd,.cho,.pro,.tab,.onsong,text/plain"
               className="visually-hidden"
               onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }}
             />
