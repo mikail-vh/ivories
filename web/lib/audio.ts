@@ -160,6 +160,114 @@ export function playChord(midis: number[], opts: { duration?: number } = {}) {
   midis.forEach(m => playNote(m, { duration, gain: 0.13 }));
 }
 
+export type GuitarTone = 'acoustic' | 'electric';
+
+/* Karplus-Strong plucked string: a circular noise buffer averaged with its
+ * neighbour and attenuated each loop. Cheap, convincing, dependency-free. */
+function playGuitarVoice(
+  c: AudioContext,
+  midi: number,
+  opts: { duration: number; gain: number; when: number; tone: GuitarTone },
+) {
+  const sr = c.sampleRate;
+  const f0 = midiToFreq(midi);
+  const n = Math.max(2, Math.round(sr / f0));
+  const totalSamples = Math.floor(sr * opts.duration);
+
+  const ks = new Float32Array(n);
+  for (let i = 0; i < n; i++) ks[i] = Math.random() * 2 - 1;
+
+  /* Damping controls decay: lower = shorter, "drier" pluck (acoustic);
+   * higher = longer sustain (electric). */
+  const damping = opts.tone === 'electric' ? 0.997 : 0.993;
+
+  const buf = c.createBuffer(1, totalSamples, sr);
+  const data = buf.getChannelData(0);
+  let idx = 0;
+  for (let i = 0; i < totalSamples; i++) {
+    const cur = ks[idx];
+    const next = (cur + ks[(idx + 1) % n]) * 0.5 * damping;
+    data[i] = cur;
+    ks[idx] = next;
+    idx = (idx + 1) % n;
+  }
+
+  const src = c.createBufferSource();
+  src.buffer = buf;
+
+  const g = c.createGain();
+  g.gain.setValueAtTime(0, c.currentTime + opts.when);
+  g.gain.linearRampToValueAtTime(opts.gain, c.currentTime + opts.when + 0.005);
+  src.connect(g);
+
+  let tail: AudioNode = g;
+
+  if (opts.tone === 'electric') {
+    /* Mild asymmetric saturation + bandpass to suggest pickup colouration. */
+    const shaper = c.createWaveShaper();
+    shaper.curve = makeDistortionCurve(35);
+    const band = c.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = 1600;
+    band.Q.value = 0.8;
+    g.connect(shaper);
+    shaper.connect(band);
+    tail = band;
+  } else {
+    /* Acoustic: gentle lowpass to soften brightness, narrow body resonance. */
+    const lp = c.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 5200;
+    lp.Q.value = 0.6;
+    const body = c.createBiquadFilter();
+    body.type = 'peaking';
+    body.frequency.value = 220;
+    body.gain.value = 3;
+    body.Q.value = 1.2;
+    g.connect(lp);
+    lp.connect(body);
+    tail = body;
+  }
+
+  if (dry) tail.connect(dry);
+  if (reverb) tail.connect(reverb);
+
+  const start = c.currentTime + opts.when;
+  src.start(start);
+  src.stop(start + opts.duration + 0.05);
+}
+
+function makeDistortionCurve(amount: number): Float32Array<ArrayBuffer> {
+  const n = 1024;
+  const buf = new ArrayBuffer(n * 4);
+  const curve = new Float32Array(buf);
+  const deg = Math.PI / 180;
+  for (let i = 0; i < n; i++) {
+    const x = (i * 2) / n - 1;
+    curve[i] = ((3 + amount) * x * 20 * deg) / (Math.PI + amount * Math.abs(x));
+  }
+  return curve;
+}
+
+/* Plays the supplied MIDIs as a guitar chord with a light low→high strum.
+ * `midis` should already be ordered low→high (the voicing generator does this
+ * naturally by walking strings low E → high e). */
+export function playGuitarChord(
+  midis: number[],
+  opts: { tone?: GuitarTone; duration?: number; strumMs?: number } = {},
+) {
+  const c = getCtx();
+  if (!c) return;
+  applySettings(c);
+  const s = readSettings();
+  const tone = opts.tone ?? 'acoustic';
+  const duration = (opts.duration ?? 2.5) * s.sustain;
+  const strum = (opts.strumMs ?? 12) / 1000;
+  midis.forEach((m, i) => {
+    playGuitarVoice(c, m, { duration, gain: 0.1, when: i * strum, tone });
+  });
+}
+
 export function playSequence(midis: number[], opts: { gap?: number; duration?: number } = {}) {
   const gap = opts.gap ?? 0.18;
   const duration = opts.duration ?? 1.0;

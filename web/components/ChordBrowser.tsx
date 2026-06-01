@@ -1,22 +1,22 @@
-import { CHORD_CATEGORIES, CHORDS, NOTE_NAMES_SHARP, ROOTS, SCALES } from '@/lib/music';
+'use client';
+
+import { CHORD_CATEGORIES, CHORDS, ROOTS, SCALES } from '@/lib/music';
+import { useAppStore } from '@/lib/store';
+import { hasVoicing } from '@/lib/fretboard';
 import { ChordCard } from './ChordCard';
 import { ScaleCard } from './ScaleCard';
 
 export function ChordBrowser({ rootShort }: { rootShort: string }) {
   const root = ROOTS.find(r => r.short === rootShort);
+  const chordView = useAppStore(s => s.chordView);
   if (!root) return null;
+  const isGuitar = chordView === 'guitar';
   return (
     <>
-      <div className="toolbar">
-        <div>
-          <h2 className="text-lg font-semibold">{root.name}</h2>
-          <div className="text-xs text-[var(--text-dim)] mt-0.5">
-            Chords &amp; scales rooted on {NOTE_NAMES_SHARP[root.pc]}
-          </div>
-        </div>
-      </div>
       {CHORD_CATEGORIES.map(cat => {
-        const items = CHORDS.map((c, i) => ({ c, i })).filter(x => x.c.cat === cat);
+        const items = CHORDS.map((c, i) => ({ c, i }))
+          .filter(x => x.c.cat === cat)
+          .filter(x => !isGuitar || hasVoicing(root.pc, x.c.suffix));
         if (!items.length) return null;
         return (
           <div key={cat}>
@@ -29,12 +29,17 @@ export function ChordBrowser({ rootShort }: { rootShort: string }) {
           </div>
         );
       })}
-      <div className="section-title">Scales</div>
-      <div className="grid">
-        {SCALES.map((s, i) => (
-          <ScaleCard key={`s-${i}`} rootPc={root.pc} scale={s} idx={i} />
-        ))}
-      </div>
+      {/* Scales are piano-only for now — hide in guitar mode rather than mix metaphors. */}
+      {!isGuitar && (
+        <>
+          <div className="section-title">Scales</div>
+          <div className="grid">
+            {SCALES.map((s, i) => (
+              <ScaleCard key={`s-${i}`} rootPc={root.pc} scale={s} idx={i} />
+            ))}
+          </div>
+        </>
+      )}
     </>
   );
 }

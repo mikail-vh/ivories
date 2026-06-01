@@ -1,16 +1,20 @@
+'use client';
+
 import { useAppStore } from '@/lib/store';
 
+/* Single-line meta row above the chord grid. Used to carry colour swatches
+ * as well, but those were noisy — only the favourites-list picker stayed. */
 export function Legend() {
-  const pages = useAppStore(s => s.pages);
-  const activePageId = useAppStore(s => s.activePageId);
-  const setActivePage = useAppStore(s => s.setActivePage);
-  const addPage = useAppStore(s => s.addPage);
-  const renamePage = useAppStore(s => s.renamePage);
-  const deletePage = useAppStore(s => s.deletePage);
+  const pages = useAppStore((s) => s.pages);
+  const activePageId = useAppStore((s) => s.activePageId);
+  const setActivePage = useAppStore((s) => s.setActivePage);
+  const addPage = useAppStore((s) => s.addPage);
+  const renamePage = useAppStore((s) => s.renamePage);
+  const deletePage = useAppStore((s) => s.deletePage);
 
   const onChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const v = e.target.value;
-    const active = pages.find(p => p.id === activePageId);
+    const active = pages.find((p) => p.id === activePageId);
     if (v === '__new') {
       const name = (window.prompt('New list name:', '') || '').trim();
       if (name) addPage(name);
@@ -28,18 +32,16 @@ export function Legend() {
 
   return (
     <div className="legend">
-      <div className="legend-item root-legend"><span className="swatch root"></span> Root note</div>
-      <div className="legend-item"><span className="swatch note"></span> Chord / scale tone</div>
-      <div className="legend-item ml-auto gap-1.5">
+      <label className="legend-item">
         <span>★ list:</span>
         <select value={activePageId} onChange={onChange} aria-label="Active starred list">
-          {pages.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          {pages.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           <option disabled>──────────</option>
           <option value="__new">+ New list…</option>
           <option value="__rename">Rename current…</option>
           {pages.length > 1 && <option value="__delete">Delete current…</option>}
         </select>
-      </div>
+      </label>
     </div>
   );
 }

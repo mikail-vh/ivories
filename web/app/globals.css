@@ -17,10 +17,24 @@
   --danger: #ff5252;
   --gap: 14px;
   --nav-h: 56px;
+
+  /* ===== Liquid-glass material tokens ===== */
+  /* Blur tuned so ambient gradient blobs stay readable (more "frosted glass"
+   * than "ground glass"); saturation pulls colour into the surface. */
+  --glass-blur: 22px;
+  --glass-saturate: 220%;
+  --glass-tint: rgba(255, 255, 255, 0.05);
+  --glass-tint-strong: rgba(255, 255, 255, 0.08);
+  --glass-tint-soft: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-border-soft: rgba(255, 255, 255, 0.10);
+  --glass-highlight: rgba(255, 255, 255, 0.28);
+  --glass-lowlight: rgba(0, 0, 0, 0.20);
+  --glass-shadow: rgba(0, 0, 0, 0.45);
 }
 
 body.light {
-  --bg: #f4f6fa;
+  --bg: #f0f3f9;
   --bg-elev: #ffffff;
   --bg-elev-2: #eef0f5;
   --border: #d8dde6;
@@ -28,6 +42,47 @@ body.light {
   --text-dim: #5b6273;
   --color-white-key: #ffffff;
   --color-black-key: #222;
+  --glass-tint: rgba(255, 255, 255, 0.55);
+  --glass-tint-strong: rgba(255, 255, 255, 0.72);
+  --glass-tint-soft: rgba(255, 255, 255, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.65);
+  --glass-border-soft: rgba(0, 0, 0, 0.04);
+  --glass-highlight: rgba(255, 255, 255, 0.95);
+  --glass-lowlight: rgba(0, 0, 0, 0.05);
+  --glass-shadow: rgba(20, 25, 40, 0.12);
+}
+
+/* ===== Glass utility ===== */
+/* Frosted material with backdrop blur, specular sheen at the top, soft
+ * lowlight at the bottom, rim highlight, and an outer shadow. The radius
+ * is intentionally NOT set — each consumer picks its own. */
+.glass {
+  background: var(--glass-tint);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -1px 0 var(--glass-lowlight),
+    0 10px 30px var(--glass-shadow),
+    0 2px 6px var(--glass-shadow);
+  position: relative;
+}
+.glass-strong { background: var(--glass-tint-strong); }
+.glass-soft   { background: var(--glass-tint-soft); }
+
+/* Subtle top-half sheen — a 1-pixel gradient that lives just inside the
+ * border, mimicking the refraction highlight along a glass edge. */
+.glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 45%);
+  pointer-events: none;
+}
+body.light .glass::after {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 45%);
 }
 
 body.hide-root .root-legend { display: none; }
@@ -37,16 +92,36 @@ body.hide-root .root-legend { display: none; }
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
   color: var(--text);
   font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
-  /* `overscroll-behavior: none` on both axes also disables the browser's
-   * two-finger-swipe back-navigation gesture, which on macOS trackpads
-   * looks identical to "the page is scrolling left/right" even when no
-   * actual scrollbar is present. */
   overscroll-behavior: none;
+}
+
+/* `overflow-x: hidden` lives on body only — putting it on html silently
+ * turns html into a scroll container (overflow-y goes from visible to
+ * auto), which traps wheel and keyboard scroll input. Ambient gradient
+ * blobs sit directly on the body background with fixed attachment so
+ * they don't scroll with the page. */
+body {
   overflow-x: hidden;
+  min-height: 100vh;
+  background:
+    radial-gradient(38rem 28rem at  8% 12%, rgba(140, 100, 255, 0.55), transparent 60%),
+    radial-gradient(34rem 26rem at 92% 18%, rgba(255, 140, 70,  0.50), transparent 60%),
+    radial-gradient(48rem 36rem at 60% 95%, rgba(60, 200, 240,  0.55), transparent 65%),
+    radial-gradient(32rem 24rem at 30% 75%, rgba(255, 90, 200,  0.45), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+body.light {
+  background:
+    radial-gradient(38rem 28rem at  8% 12%, rgba(140, 100, 255, 0.45), transparent 60%),
+    radial-gradient(34rem 26rem at 92% 18%, rgba(255, 140, 70,  0.35), transparent 60%),
+    radial-gradient(48rem 36rem at 60% 95%, rgba(60, 200, 240,  0.40), transparent 65%),
+    radial-gradient(32rem 24rem at 30% 75%, rgba(255, 110, 200, 0.35), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
 }
 
 /* Whole-app lock when the song page is mounted: outer body/html never scroll,
@@ -64,86 +139,283 @@ body.song-page-active {
   overflow: hidden !important;
 }
 
-.app-nav {
-  position: sticky;
-  top: 0;
-  z-index: 40;
+/* ========== Floating nav material ========== */
+
+/* The nav capsule and theme FAB share the glass surface and add
+ * positioning. We DON'T extend `.glass` directly so we can keep the rim
+ * and specular tuned for the lit-from-above look Apple gives floating
+ * pieces. */
+.glass-capsule,
+.glass-pill {
+  position: fixed;
+  z-index: 50;
+  /* Modern liquid-glass: opaque enough to hold its shape against vibrant
+   * ambient blobs (without the 0.55 it visually faded into pink/orange
+   * gradient blooms). No glossy top sheen — blur + rim do the talking. */
+  background: rgba(20, 22, 30, 0.72);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.45),
+    0 4px 14px rgba(0, 0, 0, 0.22);
+  border-radius: 999px;
+  color: var(--text);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s;
+}
+body.light .glass-capsule,
+body.light .glass-pill {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 18px 44px rgba(20, 25, 40, 0.14),
+    0 4px 12px rgba(20, 25, 40, 0.08);
+}
+
+/* ========== Floating nav capsule ========== */
+
+.app-nav.glass-capsule {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  padding-top: max(8px, env(safe-area-inset-top));
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-}
-.app-nav .brand {
-  font-weight: 700;
-  font-size: 0.95rem;
-  text-decoration: none;
-  color: var(--text);
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-}
-.app-nav .brand .accent { color: var(--accent); }
-.app-nav .section-links {
-  display: flex;
   gap: 4px;
-  flex: 1;
-  overflow-x: auto;
-  scrollbar-width: none;
+  padding: 6px;
+  /* Default placement: bottom centre. Specific placements override below. */
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  transform-origin: bottom center;
 }
-.app-nav .section-links::-webkit-scrollbar { display: none; }
-.app-nav .section-link {
+.app-nav.glass-capsule.hidden {
+  transform: translateX(-50%) translateY(140%);
+  opacity: 0;
+  pointer-events: none;
+}
+.app-nav.placement-top {
+  top: calc(env(safe-area-inset-top, 0px) + 14px);
+  bottom: auto;
+  transform-origin: top center;
+}
+.app-nav.placement-top.hidden {
+  transform: translateX(-50%) translateY(-140%);
+  opacity: 0;
+}
+.app-nav.placement-right {
+  right: calc(env(safe-area-inset-right, 0px) + 14px);
+  top: 50%;
+  bottom: auto;
+  left: auto;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 6px;
+  /* Vertical rail uses a rounded-rect, not a cylindrical pill — looks far
+   * more anchored when the long axis is vertical. */
+  border-radius: 22px;
+  transform: translateY(-50%);
+  transform-origin: right center;
+}
+.app-nav.placement-right .nav-tab {
+  border-radius: 16px;
+}
+.app-nav.placement-right.hidden {
+  transform: translateY(-50%) translateX(140%);
+  opacity: 0;
+}
+
+.nav-tab {
+  position: relative;
   display: inline-flex;
   align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  /* Brighter than --text-dim so inactive tabs stay readable when the
+   * frosted material sits over vivid ambient blobs. */
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s, background 0.15s;
+  z-index: 1;
+}
+body.light .nav-tab { color: rgba(20, 25, 40, 0.82); }
+.nav-tab:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: transparent;
+}
+body.light .nav-tab:hover { color: var(--text); background: rgba(20, 25, 40, 0.06); }
+.nav-tab.active {
+  color: #1a1d24;
+  background: var(--accent);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.1) inset,
+    0 2px 6px rgba(255, 212, 59, 0.35);
+}
+.nav-tab-icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+}
+.nav-tab-icon svg { width: 100%; height: 100%; }
+.nav-tab-label { letter-spacing: -0.1px; }
+
+/* Below 520px keep icons but drop labels to fit four tabs comfortably. */
+@media (max-width: 520px) {
+  .nav-tab-label { display: none; }
+  .nav-tab { padding: 9px 11px; }
+  .nav-tab-icon { width: 18px; height: 18px; }
+}
+
+/* Right-rail variant: vertical layout, icon above label. */
+.app-nav.placement-right .nav-tab {
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  font-size: 0.7rem;
+}
+.app-nav.placement-right .nav-tab-icon { width: 18px; height: 18px; }
+
+/* ========== View toolbar (top-right glass pill) ========== */
+
+.view-toolbar.glass-capsule {
+  /* Override .glass-capsule positioning (which defaults to bottom-centre). */
+  top: calc(env(safe-area-inset-top, 0px) + 14px);
+  right: calc(env(safe-area-inset-right, 0px) + 14px);
+  bottom: auto;
+  left: auto;
+  transform: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 999px;
+  color: var(--text);
+}
+.view-toolbar.glass-capsule.placement-top {
+  top: calc(env(safe-area-inset-top, 0px) + 78px);
+}
+.view-toolbar.glass-capsule.placement-right {
+  right: calc(env(safe-area-inset-right, 0px) + 92px);
+}
+
+/* Piano/Guitar segmented control — pill-in-pill */
+.view-toolbar .tb-segment {
+  display: inline-flex;
+  gap: 1px;
+  padding: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+}
+body.light .view-toolbar .tb-segment { background: rgba(20, 25, 40, 0.05); }
+.view-toolbar .tb-seg-btn {
+  appearance: none;
+  background: transparent;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 6px 12px;
   border-radius: 999px;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: var(--text-dim);
-  text-decoration: none;
-  transition: background 0.15s, color 0.15s;
-  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s, color 0.12s;
 }
-.app-nav .section-link:hover { background: var(--bg-elev-2); color: var(--text); }
-.app-nav .section-link.active { background: var(--accent); color: #1a1d24; }
-/* On the very smallest phones (iPhone SE 1st gen and similar), the brand text
- * collides with the rightmost section link + theme toggle. Drop the wordmark
- * below 360px — the piano emoji alone is recognizable, and Settings stops
- * being clipped behind the theme button. */
-@media (max-width: 360px) {
-  .app-nav .brand-text { display: none; }
-  .app-nav { gap: 8px; padding: 8px 8px; }
-  .app-nav .section-link { padding: 6px 10px; font-size: 0.82rem; }
+.view-toolbar .tb-seg-btn:hover { color: var(--text); border-color: transparent; }
+.view-toolbar .tb-seg-btn.active {
+  background: var(--accent);
+  color: #1a1d24;
 }
+.view-toolbar .tb-seg-btn.active:hover { color: #1a1d24; }
 
-.app-header {
-  background: var(--bg-elev);
-  border-bottom: 1px solid var(--border);
-  padding: 10px 12px;
-}
-
-.header-row {
-  display: flex;
+/* Compact / Hide-root pills */
+.view-toolbar .tb-pill {
+  appearance: none;
+  background: transparent;
+  border: none;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.app-header h1 {
-  font-size: 1.05rem;
-  font-weight: 600;
-  margin: 0;
-  letter-spacing: 0.3px;
-}
-.app-header h1 .accent { color: var(--accent); }
-
-.controls {
-  display: flex;
   gap: 6px;
-  flex-wrap: wrap;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s, color 0.12s;
 }
+.view-toolbar .tb-pill:hover { color: var(--text); background: rgba(255, 255, 255, 0.05); border-color: transparent; }
+body.light .view-toolbar .tb-pill:hover { background: rgba(20, 25, 40, 0.05); }
+.view-toolbar .tb-pill[data-active="true"] {
+  background: rgba(255, 212, 59, 0.15);
+  color: var(--accent);
+}
+body.light .view-toolbar .tb-pill[data-active="true"] { background: rgba(180, 130, 0, 0.12); color: #a87800; }
+.view-toolbar .tb-pill[data-active="true"]:hover { background: rgba(255, 212, 59, 0.22); }
+
+/* Theme icon (no label) */
+.view-toolbar .tb-icon-only {
+  appearance: none;
+  background: transparent;
+  border: none;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.view-toolbar .tb-icon-only:hover { background: rgba(255, 255, 255, 0.07); border-color: transparent; }
+body.light .view-toolbar .tb-icon-only:hover { background: rgba(20, 25, 40, 0.06); }
+
+.view-toolbar .tb-divider {
+  width: 1px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 0 2px;
+}
+body.light .view-toolbar .tb-divider { background: rgba(20, 25, 40, 0.12); }
+
+/* Drop the text labels on phones — icons alone */
+@media (max-width: 720px) {
+  .view-toolbar .tb-seg-btn span,
+  .view-toolbar .tb-pill span { display: none; }
+  .view-toolbar .tb-seg-btn,
+  .view-toolbar .tb-pill { padding: 7px 10px; }
+}
+
+/* Reserve safe areas at the relevant edge so floating nav doesn't cover
+ * page content. Applied to <body> by AppNav. The top variant needs more
+ * room than the others because the nav sits over page headers — give it
+ * enough that "Settings" / "Chord Cheat Sheet" titles aren't clipped. */
+body.nav-placement-bottom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 90px); }
+body.nav-placement-top    { padding-top:    calc(env(safe-area-inset-top, 0px)    + 96px); }
+body.nav-placement-right  { padding-right:  calc(env(safe-area-inset-right, 0px)  + 96px); }
+@media (max-width: 520px) {
+  body.nav-placement-bottom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px); }
+  body.nav-placement-top    { padding-top:    calc(env(safe-area-inset-top, 0px)    + 76px); }
+  body.nav-placement-right  { padding-right:  calc(env(safe-area-inset-right, 0px)  + 76px); }
+}
+
+/* Slimmer cheatsheet title (controls now live in ViewToolbar). */
+.cheatsheet-title {
+  padding: 0 0 14px;
+}
+.cheatsheet-title h1 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  margin: 0;
+}
+.cheatsheet-title h1 .accent { color: var(--accent); }
 
 button {
   background: var(--bg-elev-2);
@@ -167,53 +439,162 @@ button:disabled:hover { border-color: var(--border); }
 
 button.icon { padding: 7px 10px; }
 
-.tabs {
+/* ========== Cheat Sheet layout: title row + (rail + content) ========== */
+
+.cheatsheet-layout {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  column-gap: 22px;
+  row-gap: 18px;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 28px 32px;
+}
+/* Title sits across the full width so the rail + cards both start at the
+ * same Y position below it. */
+.cheatsheet-layout > .cheatsheet-title {
+  grid-column: 1 / -1;
+  padding: 0;
+}
+.cheatsheet-main { min-width: 0; }
+
+aside.root-rail {
   position: sticky;
-  top: var(--nav-h);
-  z-index: 20;
-  background: var(--bg-elev);
-  border-bottom: 1px solid var(--border);
-  overflow-x: auto;
-  overflow-y: hidden;
-  white-space: nowrap;
-  -webkit-overflow-scrolling: touch;
+  top: 28px;
+  align-self: start;
+  grid-row: 2;
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 8px;
+  border-radius: 22px;
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
   scrollbar-width: none;
+  /* Glass material inlined (Tailwind v4 layers .glass too low to win). */
+  background: var(--glass-tint);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border-soft);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 8px 24px var(--glass-shadow);
 }
-.tabs::-webkit-scrollbar { display: none; }
+.root-rail::-webkit-scrollbar { display: none; }
 
-.tabs-inner {
-  display: inline-flex;
-  gap: 2px;
-  padding: 6px 10px;
-}
-
-.tab {
+.rail-key {
+  appearance: none;
   background: transparent;
+  border: none;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 700;
   color: var(--text-dim);
-  border: 1px solid transparent;
-  padding: 8px 14px;
-  border-radius: 999px;
-  font-size: 0.88rem;
-  font-weight: 600;
+  padding: 10px 0;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.15s;
-  min-width: 48px;
+  transition: background 0.12s, color 0.12s, transform 0.06s;
+  font-family: inherit;
+  letter-spacing: -0.2px;
 }
-
-.tab.active {
+.rail-key:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: transparent;
+}
+body.light .rail-key:hover { background: rgba(20, 25, 40, 0.06); }
+.rail-key.active {
   background: var(--accent);
   color: #1a1d24;
+  box-shadow: 0 2px 8px rgba(255, 212, 59, 0.25);
 }
+.rail-key.active:hover { color: #1a1d24; }
+.rail-key-list { font-size: 1.1rem; }
 
-.tab:not(.active):hover {
-  background: var(--bg-elev-2);
-  color: var(--text);
+.rail-divider {
+  display: block;
+  height: 1px;
+  margin: 6px 10px;
+  background: rgba(255, 255, 255, 0.10);
 }
+body.light .rail-divider { background: rgba(20, 25, 40, 0.10); }
 
 main {
-  padding: 14px 12px 80px;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 0;
+  max-width: 100%;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .cheatsheet-layout {
+    grid-template-columns: 60px minmax(0, 1fr);
+    padding: 20px 14px;
+    gap: 14px;
+  }
+  .rail-key { font-size: 0.86rem; padding: 8px 0; }
+  .cheatsheet-title h1 { font-size: 1.4rem; }
+}
+
+/* ---- Strip the boxes off the legend & root-toolbar so they flow as
+   page metadata, not competing cards ---- */
+.cheatsheet-main .toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin: 4px 0 16px;
+  flex-wrap: wrap;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  padding: 0;
+}
+.cheatsheet-main .toolbar h2 {
+  font-size: 1.15rem;
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.1px;
+}
+.cheatsheet-main .toolbar > div > div {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  margin-top: 2px !important;
+}
+
+.cheatsheet-main .legend {
+  display: flex;
+  justify-content: flex-end;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  padding: 0;
+  margin-bottom: 18px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+.cheatsheet-main .legend .legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.cheatsheet-main .legend select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: auto;
+}
+body.light .cheatsheet-main .legend select {
+  background: rgba(20, 25, 40, 0.04);
+  border-color: rgba(20, 25, 40, 0.08);
 }
 
 .section-title {
@@ -286,6 +667,52 @@ body.mode-compact .card-title { font-size: 0.92rem; }
   line-height: 1.3;
 }
 body.mode-compact .card-meta { display: none; }
+
+/* Guitar variant of ChordCard — fretboard fills the card the way the piano
+ * keyboard does in piano mode. */
+.card.guitar-chord-card .card-guitar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 6px 4px 4px;
+}
+.card.guitar-chord-card .card-guitar-tap {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  width: 100%;
+  transition: transform 0.08s;
+}
+.card.guitar-chord-card .card-guitar-tap:hover { transform: translateY(-1px); }
+.card.guitar-chord-card .card-guitar-tap .chord-diagram {
+  width: 100%;
+  max-width: 100%;
+}
+.card.guitar-chord-card .voicing-label {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  letter-spacing: 0.3px;
+  text-align: center;
+}
+.card.guitar-chord-card .card-guitar-empty {
+  /* Defensive fallback — main grid filters these out, but CustomList can
+   * still show a starred chord we don't yet have a voicing for. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  font-style: italic;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+body.mode-compact .card.guitar-chord-card .card-guitar { padding: 2px 0; gap: 4px; }
+body.mode-compact .card.guitar-chord-card .voicing-label { font-size: 0.68rem; }
+body.mode-compact .card.guitar-chord-card .card-guitar-empty { min-height: 80px; }
 
 .card-controls {
   display: flex;
@@ -645,6 +1072,354 @@ body.light .setting-value { color: #8a5a00; }
   flex: 0 0 auto;
 }
 .reset-btn:hover { color: var(--danger); border-color: var(--danger); }
+
+.settings-segmented {
+  display: inline-flex;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px;
+}
+.settings-segmented button {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.settings-segmented button:hover { color: var(--text); }
+.settings-segmented button.active {
+  background: var(--accent);
+  color: #1a1d24;
+}
+
+.settings-chord-preview {
+  display: flex;
+  justify-content: center;
+  padding-top: 6px;
+}
+.settings-chord-preview-card {
+  appearance: none;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  min-width: 160px;
+  transition: border-color 0.15s, transform 0.08s;
+}
+.settings-chord-preview-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.settings-chord-preview-title {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--text);
+}
+.settings-chord-preview-hint {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+.settings-chord-preview-diagram { width: 110px; }
+.settings-chord-preview-diagram.horizontal { width: 180px; }
+
+/* Nav placement preview — small mock frame with a capsule in the chosen spot. */
+.nav-preview {
+  margin-top: 10px;
+  width: 280px;
+}
+.nav-preview-page {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.nav-preview-content {
+  position: absolute;
+  inset: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.nav-preview-line {
+  height: 6px;
+  background: var(--border);
+  border-radius: 999px;
+  width: 40%;
+}
+.nav-preview-line.wide { width: 70%; }
+.nav-preview-capsule {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+}
+body.light .nav-preview-capsule {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+.nav-preview-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  opacity: 0.5;
+}
+.nav-preview-dot.active {
+  background: var(--accent);
+  opacity: 1;
+}
+.nav-preview.placement-bottom .nav-preview-capsule {
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.nav-preview.placement-top .nav-preview-capsule {
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.nav-preview.placement-right .nav-preview-capsule {
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  flex-direction: column;
+  padding: 6px 5px;
+  gap: 6px;
+}
+
+/* ========== Playground ========== */
+
+.playground-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 28px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.playground-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.playground-titles h1 {
+  font-size: 1.6rem;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+.playground-titles p {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin: 4px 0 0;
+}
+.playground-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.playground-segment {
+  display: inline-flex;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px;
+}
+.playground-segment button {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.playground-segment button:hover { color: var(--text); border-color: transparent; }
+.playground-segment button.active {
+  background: var(--accent);
+  color: #1a1d24;
+}
+.playground-segment button.active:hover { color: #1a1d24; }
+.labels-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+.labels-toggle input { width: 16px; height: 16px; accent-color: var(--accent); }
+
+.playground-pickers {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.playground-picker {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.playground-picker select {
+  background: var(--bg-elev-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  min-width: 160px;
+  cursor: pointer;
+}
+.play-overlay-btn {
+  align-self: flex-end;
+  background: var(--accent);
+  color: #1a1d24;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.playground-board {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-x: auto;
+}
+
+/* ----- Fretboard ----- */
+
+.fretboard-wrap {
+  width: 100%;
+  user-select: none;
+  touch-action: none;
+}
+.fretboard-wrap.capo-dragging { cursor: grabbing; }
+.fretboard {
+  width: 100%;
+  height: auto;
+  display: block;
+  color: var(--text);
+}
+.fretboard .fb-nut { stroke: var(--text); stroke-width: 4; stroke-linecap: round; }
+.fretboard .fb-fret { stroke: var(--text-dim); stroke-width: 1.2; opacity: 0.6; }
+.fretboard .fb-string { stroke: var(--text-dim); stroke-width: 1.5; }
+/* Slight thickness variation across strings — a nod to wound vs plain. */
+.fretboard .fb-string-0 { stroke-width: 2.4; }
+.fretboard .fb-string-1 { stroke-width: 2.1; }
+.fretboard .fb-string-2 { stroke-width: 1.8; }
+.fretboard .fb-string-3 { stroke-width: 1.5; }
+.fretboard .fb-string-4 { stroke-width: 1.3; }
+.fretboard .fb-string-5 { stroke-width: 1.1; }
+.fretboard .fb-marker { fill: var(--text-dim); opacity: 0.25; }
+.fretboard .fb-string-name {
+  font-size: 13px;
+  font-weight: 800;
+  fill: var(--text-dim);
+  font-family: var(--font-geist-sans), sans-serif;
+}
+.fretboard .fb-fret-num {
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--text-dim);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+.fretboard .fb-note { fill: var(--accent); }
+.fretboard .fb-note-root { fill: #ff6b6b; }
+.fretboard .fb-note-label {
+  font-size: 9px;
+  font-weight: 800;
+  fill: #1a1d24;
+  font-family: var(--font-geist-sans), sans-serif;
+}
+.fretboard .fb-faint-label {
+  font-size: 9px;
+  font-weight: 600;
+  fill: var(--text-dim);
+  opacity: 0.55;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+.fretboard .fb-hit:hover { fill: rgba(255, 212, 59, 0.12); }
+.fretboard .fb-capo {
+  fill: rgba(255, 212, 59, 0.85);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  cursor: grab;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+}
+.fretboard-wrap.capo-dragging .fb-capo { cursor: grabbing; }
+
+.capo-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--text);
+}
+.capo-controls .capo-label {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 700;
+  margin-right: 6px;
+}
+.capo-controls button {
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  border-radius: 999px;
+}
+.capo-controls button.active {
+  background: var(--accent);
+  color: #1a1d24;
+  border-color: var(--accent);
+}
+.capo-controls .capo-hint {
+  margin-left: 10px;
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* Playground piano sized for screen width */
+.playground-board .piano-svg {
+  width: 100%;
+  max-height: 220px;
+}
 
 @media (max-width: 480px) {
   .settings-page { padding: 18px 12px 100px; }
@@ -1965,6 +2740,28 @@ body.light .song-section { box-shadow: 0 1px 3px rgba(20, 25, 40, 0.04); }
   padding: 4px 0;
   letter-spacing: 0.2px;
 }
+.song-line-tab-wrap {
+  min-height: 0;
+  padding: 6px 0;
+}
+.song-line-tab {
+  margin: 0;
+  padding: 10px 12px;
+  font-family: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  white-space: pre;
+  overflow-x: auto;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: var(--text);
+  tab-size: 4;
+}
+body.light .song-line-tab {
+  background: rgba(20, 25, 40, 0.04);
+  border-color: rgba(20, 25, 40, 0.1);
+}
 
 .song-line-tokens {
   display: flex;
@@ -2244,6 +3041,85 @@ body.light .palette-card:hover { box-shadow: 0 6px 20px rgba(20, 25, 40, 0.08); 
   font-size: 1rem;
   color: var(--text);
   letter-spacing: -0.2px;
+}
+
+/* ========== Chord diagram (guitar) ========== */
+
+.chord-diagram {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: var(--text);
+}
+.chord-diagram .cd-fret  { stroke: var(--text-dim); stroke-width: 1; }
+.chord-diagram .cd-nut   { stroke: var(--text); stroke-width: 3; stroke-linecap: round; }
+.chord-diagram .cd-string { stroke: var(--text-dim); stroke-width: 0.9; }
+.chord-diagram .cd-fret-label {
+  font-size: 9px;
+  font-weight: 700;
+  fill: var(--text-dim);
+  font-family: var(--font-geist-sans), sans-serif;
+}
+.chord-diagram .cd-mute {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--text-dim);
+  font-family: var(--font-geist-sans), sans-serif;
+}
+.chord-diagram .cd-open {
+  fill: none;
+  stroke: var(--text-dim);
+  stroke-width: 1;
+}
+.chord-diagram .cd-dot,
+.chord-diagram .cd-barre {
+  fill: var(--accent);
+}
+.chord-diagram .cd-finger {
+  font-size: 7px;
+  font-weight: 800;
+  fill: #1a1d24;
+  font-family: var(--font-geist-sans), sans-serif;
+  pointer-events: none;
+}
+
+/* ========== Voicing flipper (shared by /chords cards) ========== */
+
+.voicing-flipper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.voicing-flipper button {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+.voicing-flipper button:hover { color: var(--text); background: var(--bg-elev-2); border-color: transparent; }
+.voicing-flipper button:disabled { opacity: 0.3; cursor: default; }
+.voicing-flipper button:disabled:hover { background: transparent; }
+.voicing-flipper .dots {
+  display: inline-flex;
+  gap: 4px;
+  padding: 0 4px;
+}
+.voicing-flipper .dots span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  opacity: 0.4;
+}
+.voicing-flipper .dots span.on {
+  background: var(--accent);
+  opacity: 1;
 }
 
 @media (max-width: 1023px) {
@@ -2672,4 +3548,65 @@ body.light .palette-card:hover { box-shadow: 0 6px 20px rgba(20, 25, 40, 0.08); 
   color: var(--text-dim);
   flex: 0 0 auto;
   font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+ * Liquid-glass surface migration
+ *
+ * Override the legacy solid backgrounds with the frosted material so the
+ * redesign reads system-wide. Selectors are grouped by visual weight:
+ *   - LIGHT panels: floating cards, palette tiles, individual chord cards
+ *   - MEDIUM panels: large groups (settings sections, song body sections,
+ *     playground board, chord palette aside)
+ *   - PILL controls: segmented switches & toggles
+ * ============================================================ */
+
+.app-header,
+.toolbar,
+.legend,
+.card,
+.palette-card,
+.song-section {
+  background: var(--glass-tint) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border-soft) !important;
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 8px 24px var(--glass-shadow) !important;
+}
+
+.settings-group,
+.chord-palette,
+.playground-board,
+.spotify-panel {
+  background: var(--glass-tint-strong) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border) !important;
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 12px 36px var(--glass-shadow) !important;
+}
+
+/* Segmented control pills — same material, smaller scale. */
+.settings-segmented,
+.playground-segment,
+.instrument-toggle,
+.capo-controls > button,
+.capo-controls,
+.tabs {
+  background: var(--glass-tint-soft);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--glass-border-soft);
+}
+
+/* Default page buttons — softer glass on hover so they pick up the effect
+ * without feeling like every button is a panel. */
+button:not(.nav-tab):not(.glass-pill):not(.theme-fab):not(.toggle) {
+  background: var(--glass-tint-soft);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-color: var(--glass-border-soft);
 }

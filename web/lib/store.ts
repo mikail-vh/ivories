@@ -31,6 +31,10 @@ export const AUDIO_DEFAULTS: AudioSettings = {
 
 export type GridPreset = 'auto' | '2col' | '3col';
 export type LyricSize = 'sm' | 'md' | 'lg';
+export type ChordView = 'piano' | 'guitar';
+export type GuitarTone = 'acoustic' | 'electric';
+export type FretboardOrientation = 'vertical' | 'horizontal';
+export type NavPlacement = 'bottom' | 'top' | 'right';
 
 type State = {
   pages: FavPage[];
@@ -55,6 +59,20 @@ type State = {
   /* Spotify embed volume (0..1). Persisted so users don't have to drop it
    * every time they open a song. Applied via the IFrame Embed API. */
   spotifyVolume: number;
+  /* Whether the chord palette shows piano keyboards or guitar fretboards.
+   * Sound follows visual: piano → piano synth, guitar → guitar synth. */
+  chordView: ChordView;
+  /* Which guitar timbre when chordView === 'guitar'. */
+  guitarTone: GuitarTone;
+  /* How guitar chord diagrams are oriented. */
+  fretboardOrientation: FretboardOrientation;
+  /* Show note names on every key / fret position in /playground. */
+  playgroundShowLabels: boolean;
+  /* Reverse string order on guitar diagrams — default has high e on top
+   * (standard tab convention); flipped is low E on top (left-handed). */
+  fretboardFlipped: boolean;
+  /* Where the floating liquid-glass nav lives. */
+  navPlacement: NavPlacement;
 } & AudioSettings;
 
 type Actions = {
@@ -69,6 +87,12 @@ type Actions = {
   setChordPaletteSide: (side: 'left' | 'right') => void;
   setLyricSize: (size: LyricSize) => void;
   setSpotifyVolume: (volume: number) => void;
+  setChordView: (view: ChordView) => void;
+  setGuitarTone: (tone: GuitarTone) => void;
+  setFretboardOrientation: (orientation: FretboardOrientation) => void;
+  togglePlaygroundLabels: () => void;
+  toggleFretboardFlipped: () => void;
+  setNavPlacement: (placement: NavPlacement) => void;
 
   isFavorited: (item: FavoriteItem) => boolean;
   toggleFavorite: (item: FavoriteItem) => void;
@@ -101,6 +125,12 @@ export const useAppStore = create<State & Actions>()(
       songGridPreset: 'auto',
       lyricSize: 'md',
       spotifyVolume: 0.7,
+      chordView: 'piano',
+      guitarTone: 'acoustic',
+      fretboardOrientation: 'vertical',
+      playgroundShowLabels: false,
+      fretboardFlipped: false,
+      navPlacement: 'bottom',
       ...AUDIO_DEFAULTS,
 
       setActiveTab: (tab) => set({ activeTab: tab }),
@@ -114,6 +144,12 @@ export const useAppStore = create<State & Actions>()(
       setChordPaletteSide: (side) => set({ chordPaletteSide: side }),
       setLyricSize: (size) => set({ lyricSize: size }),
       setSpotifyVolume: (volume) => set({ spotifyVolume: Math.max(0, Math.min(1, volume)) }),
+      setChordView: (view) => set({ chordView: view }),
+      setGuitarTone: (tone) => set({ guitarTone: tone }),
+      setFretboardOrientation: (orientation) => set({ fretboardOrientation: orientation }),
+      togglePlaygroundLabels: () => set({ playgroundShowLabels: !get().playgroundShowLabels }),
+      toggleFretboardFlipped: () => set({ fretboardFlipped: !get().fretboardFlipped }),
+      setNavPlacement: (placement) => set({ navPlacement: placement }),
 
       isFavorited: (item) => {
         const page = get().pages.find(p => p.id === get().activePageId);

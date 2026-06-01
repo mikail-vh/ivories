@@ -14,7 +14,7 @@ export type Token = ChordToken | LyricToken;
 
 export type Line = {
   id: string;
-  kind: 'lyric' | 'comment' | 'blank';
+  kind: 'lyric' | 'comment' | 'blank' | 'tab';
   tokens: Token[];
   text?: string;
 };
@@ -264,6 +264,52 @@ export function uniqueChordsInSong(song: Song): { sym: string; rootPc: number; i
   return [...seen.values()];
 }
 
+/* A guitar-tab line looks like `<string>|...dashes...`. We require the dash
+ * to filter out lone chord-letter-with-pipe edge cases. */
+function looksLikeTabLine(line: string): boolean {
+  return /^\s*[a-gA-G][#b♯♭]?\s*[|:]/.test(line) && /-/.test(line);
+}
+
+/* Wrap runs of 3+ bare tab lines (with optional bridging blank lines) in
+ * `{sot}`/`{eot}` so they survive the chord-line preprocessor and reach the
+ * parser as a tab block. 3 is the minimum sensible count — single-string
+ * riffs and "E|" lone lines stay as ordinary lyrics. */
+function wrapBareTabBlocks(src: string): string {
+  const lines = src.split(/\r?\n/);
+  const out: string[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (!looksLikeTabLine(lines[i])) {
+      out.push(lines[i]);
+      i++;
+      continue;
+    }
+    let j = i;
+    let lastTabIdx = i;
+    while (j < lines.length) {
+      if (looksLikeTabLine(lines[j])) {
+        lastTabIdx = j;
+        j++;
+      } else if (lines[j].trim() === '' && j + 1 < lines.length && looksLikeTabLine(lines[j + 1])) {
+        j++;
+      } else {
+        break;
+      }
+    }
+    const block = lines.slice(i, lastTabIdx + 1);
+    const tabCount = block.filter(looksLikeTabLine).length;
+    if (tabCount >= 3) {
+      out.push('{sot}');
+      for (const l of block) out.push(l);
+      out.push('{eot}');
+    } else {
+      for (const l of block) out.push(l);
+    }
+    i = lastTabIdx + 1;
+  }
+  return out.join('\n');
+}
+
 /* Convert "chord line above lyric line" style to inline ChordPro brackets,
  * preserving whitespace alignment between chord positions and lyric chars. */
 function preprocessChordLines(src: string): string {
@@ -326,6 +372,8 @@ const SECTION_DIRECTIVES: Record<string, string> = {
   sob: 'bridge',          start_of_bridge: 'bridge',
 };
 const SECTION_END = new Set(['eoc', 'end_of_chorus', 'eov', 'end_of_verse', 'eob', 'end_of_bridge']);
+const TAB_START = new Set(['sot', 'start_of_tab']);
+const TAB_END = new Set(['eot', 'end_of_tab']);
 
 /* Many songs use `{c: Verse 1}` / `{comment: Chorus}` instead of the proper
  * `{sov}` / `{soc}` directives, leaving the parser with a single mega-section.
@@ -359,7 +407,8 @@ export function parseChordPro(src: string): {
   };
   let current = newSection('verse');
 
-  const processed = preprocessChordLines(src);
+  const processed = preprocessChordLines(wrapBareTabBlocks(src));
+  let inTab = false;
 
   for (const raw of processed.split(/\r?\n/)) {
     const line = raw.replace(/\s+$/, '');
@@ -368,6 +417,13 @@ export function parseChordPro(src: string): {
     if (dirMatch) {
       const key = dirMatch[1].trim().toLowerCase();
       const value = (dirMatch[2] ?? '').trim();
+      if (TAB_START.has(key)) { inTab = true; continue; }
+      if (TAB_END.has(key))   { inTab = false; continue; }
+      if (inTab) {
+        /* Directives inside a tab block aren't allowed; treat as tab text. */
+        current.lines.push({ id: `${current.id}:l${lIdx++}`, kind: 'tab', tokens: [], text: raw });
+        continue;
+      }
       if (key === 'title' || key === 't') meta.title = value;
       else if (key === 'subtitle' || key === 'st' || key === 'artist') meta.artist = value;
       else if (key === 'key') meta.key = value;
@@ -385,6 +441,11 @@ export function parseChordPro(src: string): {
       } else if (SECTION_END.has(key)) {
         current = newSection('verse');
       }
+      continue;
+    }
+
+    if (inTab) {
+      current.lines.push({ id: `${current.id}:l${lIdx++}`, kind: 'tab', tokens: [], text: raw });
       continue;
     }
 

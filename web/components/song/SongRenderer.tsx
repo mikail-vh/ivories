@@ -297,15 +297,62 @@ function SectionView({
         </div>
       )}
       {headerName && <h3 className="song-section-name">{headerName}</h3>}
-      {linesToRender.map((line) => (
-        <LineView
-          key={line.id}
-          line={line}
-          transpose={transpose}
-          overlay={renderLineOverlay?.(line.id)}
-        />
-      ))}
+      {groupTabLines(linesToRender).map((g) =>
+        g.kind === 'tab' ? (
+          <TabBlockView
+            key={g.lines[0].id}
+            lines={g.lines}
+            renderLineOverlay={renderLineOverlay}
+          />
+        ) : (
+          <LineView
+            key={g.line.id}
+            line={g.line}
+            transpose={transpose}
+            overlay={renderLineOverlay?.(g.line.id)}
+          />
+        ),
+      )}
     </section>
+  );
+}
+
+type LineGroup =
+  | { kind: 'tab'; lines: Line[] }
+  | { kind: 'line'; line: Line };
+
+/* Coalesce consecutive `kind: 'tab'` lines into one group so they share a
+ * single `<pre>` block — keeps the ASCII grid intact instead of stamping
+ * each string onto its own padded `.song-line` row. */
+function groupTabLines(lines: Line[]): LineGroup[] {
+  const out: LineGroup[] = [];
+  for (const line of lines) {
+    if (line.kind === 'tab') {
+      const last = out[out.length - 1];
+      if (last && last.kind === 'tab') last.lines.push(line);
+      else out.push({ kind: 'tab', lines: [line] });
+    } else {
+      out.push({ kind: 'line', line });
+    }
+  }
+  return out;
+}
+
+function TabBlockView({
+  lines,
+  renderLineOverlay,
+}: {
+  lines: Line[];
+  renderLineOverlay?: (lineId: string) => React.ReactNode;
+}) {
+  const overlays = renderLineOverlay
+    ? lines.map((l) => renderLineOverlay(l.id)).filter(Boolean)
+    : [];
+  return (
+    <div className="song-line song-line-tab-wrap" data-line-id={lines[0].id}>
+      <pre className="song-line-tab">{lines.map((l) => l.text ?? '').join('\n')}</pre>
+      {overlays}
+    </div>
   );
 }
 

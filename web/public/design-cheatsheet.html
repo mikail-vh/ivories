@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cheat Sheet — Layout Options</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --bg-elev: #1a1d24;
+    --text: #e6e8ee;
+    --text-dim: #9aa0ad;
+    --border: rgba(255,255,255,0.10);
+    --accent: #ffd43b;
+    --pink: #ff6bbd;
+    --purple: #8c64ff;
+    --cyan: #3cc8f0;
+    --orange: #ff8c46;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(38rem 28rem at  8% 12%, rgba(140,100,255,0.55), transparent 60%),
+      radial-gradient(34rem 26rem at 92% 18%, rgba(255,140,70,0.50),  transparent 60%),
+      radial-gradient(48rem 36rem at 60% 95%, rgba(60,200,240,0.55),  transparent 65%),
+      radial-gradient(32rem 24rem at 30% 75%, rgba(255,90,200,0.45),  transparent 60%),
+      var(--bg);
+    background-attachment: fixed;
+    padding: 56px 48px 96px;
+  }
+
+  header.page-head {
+    max-width: 1280px;
+    margin: 0 auto 32px;
+  }
+  header.page-head h1 {
+    font-size: 1.8rem;
+    margin: 0 0 8px;
+    letter-spacing: -0.4px;
+    font-weight: 800;
+  }
+  header.page-head p {
+    color: var(--text-dim);
+    margin: 0;
+    font-size: 0.92rem;
+    max-width: 720px;
+    line-height: 1.5;
+  }
+
+  .mockup-grid {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+
+  /* ====== Mockup frame ====== */
+  .mockup {
+    background: rgba(20, 22, 28, 0.55);
+    backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 22px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.35), 0 4px 14px rgba(0,0,0,0.18);
+  }
+  .mockup-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .mockup-head h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+  .mockup-head .tag {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .mockup-head .gist {
+    color: var(--text-dim);
+    font-size: 0.86rem;
+    margin-left: auto;
+    max-width: 60%;
+    text-align: right;
+  }
+
+  /* The fake browser viewport for each mockup */
+  .viewport {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 14px;
+    overflow: hidden;
+    background:
+      radial-gradient(20rem 14rem at 12% 18%, rgba(140,100,255,0.35), transparent 60%),
+      radial-gradient(18rem 12rem at 88% 14%, rgba(255,140,70,0.30),  transparent 60%),
+      radial-gradient(24rem 18rem at 50% 95%, rgba(60,200,240,0.32),  transparent 65%),
+      #0c0f15;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  /* Floating nav at the bottom (shared across every mockup) */
+  .vp-nav {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    padding: 6px;
+    background: rgba(28, 32, 42, 0.55);
+    backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 999px;
+    box-shadow: 0 14px 30px rgba(0,0,0,0.45);
+  }
+  .vp-nav span {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    font-weight: 700;
+  }
+  .vp-nav span.active {
+    background: var(--accent);
+    color: #1a1d24;
+  }
+
+  /* A chord card silhouette (no actual chord — just geometry) */
+  .card-stub {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 10px 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .card-stub .stub-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .card-stub .stub-sub {
+    font-size: 0.55rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-top: -3px;
+  }
+  .stub-diagram {
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    min-height: 36px;
+  }
+  .stub-diagram::before {
+    /* fret lines */
+    content: "";
+    position: absolute;
+    inset: 6px;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,0.18) 1px, transparent 1px),
+      linear-gradient(0deg, rgba(255,255,255,0.10) 1px, transparent 1px);
+    background-size: 25% 100%, 100% 25%;
+  }
+  .stub-dot {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.4);
+  }
+
+  /* Section title */
+  .vp-section {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  /* ====== A — Left rail ====== */
+  .vp-A {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    grid-template-rows: auto 1fr;
+    column-gap: 14px;
+    padding: 14px;
+  }
+  .vp-A .vp-A-header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 10px;
+  }
+  .vp-A .vp-A-title { font-size: 0.85rem; font-weight: 800; letter-spacing: -0.2px; }
+  .vp-A .vp-A-controls {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+  }
+  .vp-A .vp-A-pill {
+    font-size: 0.55rem;
+    color: var(--text-dim);
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.05);
+  }
+  .vp-A .vp-A-pill.on { background: var(--accent); color: #1a1d24; font-weight: 700; }
+
+  .vp-rail-left {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 6px 4px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    backdrop-filter: blur(20px);
+  }
+  .vp-rail-left .rail-key {
+    text-align: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 4px 0;
+    border-radius: 8px;
+    color: var(--text-dim);
+  }
+  .vp-rail-left .rail-key.active {
+    background: var(--accent);
+    color: #1a1d24;
+  }
+  .vp-A-content { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+  .vp-A-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .vp-A-cards .card-stub { aspect-ratio: 1.05 / 1; }
+
+  /* ====== B — Right rail ====== */
+  .vp-B {
+    display: grid;
+    grid-template-columns: 1fr 56px;
+    grid-template-rows: auto 1fr;
+    column-gap: 14px;
+    padding: 14px;
+  }
+  .vp-B .vp-B-header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 10px;
+  }
+  .vp-B-title { font-size: 0.85rem; font-weight: 800; letter-spacing: -0.2px; }
+  .vp-B-controls {
+    margin-left: auto;
+    display: flex; gap: 6px;
+  }
+  .vp-B-controls span {
+    font-size: 0.55rem;
+    color: var(--text-dim);
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.05);
+  }
+  .vp-B-controls span.on { background: var(--accent); color: #1a1d24; font-weight: 700; }
+  .vp-B-content {
+    display: flex; flex-direction: column; gap: 10px;
+    grid-column: 1 / 2;
+  }
+  .vp-B-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .vp-B-cards .card-stub { aspect-ratio: 1.05 / 1; }
+  .vp-rail-right {
+    grid-column: 2 / 3;
+    display: flex; flex-direction: column; gap: 2px;
+    padding: 6px 4px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    backdrop-filter: blur(20px);
+  }
+  .vp-rail-right .rail-key {
+    text-align: center; font-size: 0.65rem; font-weight: 700;
+    padding: 4px 0; border-radius: 8px; color: var(--text-dim);
+  }
+  .vp-rail-right .rail-key.active { background: var(--accent); color: #1a1d24; }
+
+  /* ====== C — Floating root capsule ====== */
+  .vp-C {
+    display: flex; flex-direction: column;
+    padding: 14px;
+    position: relative;
+  }
+  .vp-C-header {
+    display: flex; align-items: center; gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 10px;
+  }
+  .vp-C-title { font-size: 0.85rem; font-weight: 800; letter-spacing: -0.2px; }
+  .vp-C-controls {
+    margin-left: auto; display: flex; gap: 6px;
+  }
+  .vp-C-controls span {
+    font-size: 0.55rem; color: var(--text-dim);
+    padding: 4px 8px; border-radius: 999px;
+    background: rgba(255,255,255,0.05);
+  }
+  .vp-C-controls span.on { background: var(--accent); color: #1a1d24; font-weight: 700; }
+  .vp-C-content { display: flex; flex-direction: column; gap: 10px; }
+  .vp-C-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .vp-C-cards .card-stub { aspect-ratio: 1.05 / 1; }
+  /* Floating glass capsule with root keys */
+  .vp-root-capsule {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 6px;
+    background: rgba(28, 32, 42, 0.55);
+    backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 22px;
+    box-shadow: 0 14px 30px rgba(0,0,0,0.45);
+  }
+  .vp-root-capsule .cap-key {
+    width: 22px;
+    text-align: center;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 3px 0;
+    border-radius: 8px;
+    color: var(--text-dim);
+  }
+  .vp-root-capsule .cap-key.active {
+    background: var(--accent);
+    color: #1a1d24;
+  }
+
+  /* ====== D — Scroll snap + position indicator ====== */
+  .vp-D {
+    display: grid;
+    grid-template-columns: 14px 1fr;
+    grid-template-rows: auto 1fr;
+    column-gap: 14px;
+    padding: 14px;
+  }
+  .vp-D-header {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 10px;
+  }
+  .vp-D-title { font-size: 0.85rem; font-weight: 800; letter-spacing: -0.2px; }
+  .vp-D-controls { margin-left: auto; display: flex; gap: 6px; }
+  .vp-D-controls span {
+    font-size: 0.55rem; color: var(--text-dim);
+    padding: 4px 8px; border-radius: 999px; background: rgba(255,255,255,0.05);
+  }
+  .vp-D-controls span.on { background: var(--accent); color: #1a1d24; font-weight: 700; }
+  .vp-indicator-col {
+    display: flex; flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 0;
+  }
+  .vp-indicator-col .dot {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+  }
+  .vp-indicator-col .dot.active {
+    background: var(--accent);
+    transform: scale(1.6);
+  }
+  .vp-indicator-col .key-label {
+    font-size: 0.46rem;
+    color: var(--text-dim);
+    margin-top: 1px;
+  }
+  .vp-indicator-col .key-label.active { color: var(--accent); font-weight: 700; }
+  .vp-D-content {
+    display: flex; flex-direction: column; gap: 14px;
+    overflow: hidden;
+  }
+  .vp-D-section {
+    border-top: 1px dashed rgba(255,255,255,0.08);
+    padding-top: 8px;
+  }
+  .vp-D-section:first-child { border-top: none; padding-top: 0; }
+  .vp-D-section .vp-D-section-head {
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .vp-D-section .vp-D-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .vp-D-section .vp-D-cards .card-stub { aspect-ratio: 1.1 / 1; }
+
+  /* Pros/Cons */
+  .pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 16px;
+    font-size: 0.85rem;
+  }
+  .pros-cons .col {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .pros-cons .col h3 {
+    margin: 0 0 6px;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 700;
+  }
+  .pros-cons .col.good h3 { color: #5eda9a; }
+  .pros-cons .col.bad h3  { color: #ff7a7a; }
+  .pros-cons ul { margin: 0; padding-left: 18px; color: var(--text-dim); line-height: 1.5; }
+  .pros-cons li { margin-bottom: 2px; }
+
+  .pick-row {
+    margin-top: 20px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .pick-btn {
+    background: rgba(255, 212, 59, 0.92);
+    color: #1a1d24;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: transform 0.08s;
+  }
+  .pick-btn:hover { transform: translateY(-1px); }
+  .pick-btn.secondary {
+    background: rgba(255,255,255,0.08);
+    color: var(--text);
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(20,24,32,0.92);
+    color: var(--text);
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 14px 30px rgba(0,0,0,0.5);
+    backdrop-filter: blur(20px);
+    font-size: 0.82rem;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.25s, opacity 0.25s;
+    z-index: 100;
+  }
+  .toast.on {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <h1>Cheat Sheet — Layout Options</h1>
+  <p>Four directions for replacing the sticky horizontal pill bar. All keep the existing
+  floating nav at the bottom and the glass aesthetic. Pick whichever feels right and I'll
+  build it for real.</p>
+</header>
+
+<div class="mockup-grid">
+
+<!-- ============ A — LEFT RAIL ============ -->
+<section class="mockup">
+  <div class="mockup-head">
+    <span class="tag">Option A</span>
+    <h2>Left vertical rail</h2>
+    <span class="gist">Root letters live in a side strip — index-book vibe</span>
+  </div>
+  <div class="viewport">
+    <div class="vp-A">
+      <div class="vp-A-header">
+        <div class="vp-A-title">Chord Cheat Sheet</div>
+        <div class="vp-A-controls">
+          <span class="vp-A-pill">Piano</span>
+          <span class="vp-A-pill on">Guitar</span>
+        </div>
+      </div>
+      <aside class="vp-rail-left">
+        <div class="rail-key">C</div>
+        <div class="rail-key">C♯</div>
+        <div class="rail-key active">D</div>
+        <div class="rail-key">D♯</div>
+        <div class="rail-key">E</div>
+        <div class="rail-key">F</div>
+        <div class="rail-key">F♯</div>
+        <div class="rail-key">G</div>
+        <div class="rail-key">G♯</div>
+        <div class="rail-key">A</div>
+        <div class="rail-key">A♯</div>
+        <div class="rail-key">B</div>
+      </aside>
+      <div class="vp-A-content">
+        <div class="vp-section">Triads</div>
+        <div class="vp-A-cards">
+          <div class="card-stub"><div class="stub-title">D5</div><div class="stub-sub">Power</div><div class="stub-diagram"><span class="stub-dot" style="left:45%;top:45%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">D</div><div class="stub-sub">Major</div><div class="stub-diagram"><span class="stub-dot" style="left:35%;top:25%"></span><span class="stub-dot" style="left:65%;top:50%"></span><span class="stub-dot" style="left:45%;top:60%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">Dm</div><div class="stub-sub">Minor</div><div class="stub-diagram"><span class="stub-dot" style="left:30%;top:25%"></span><span class="stub-dot" style="left:60%;top:50%"></span><span class="stub-dot" style="left:70%;top:65%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">Ddim</div><div class="stub-sub">Dim</div><div class="stub-diagram"><span class="stub-dot" style="left:40%;top:60%"></span><span class="stub-dot" style="left:55%;top:65%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">Dsus2</div><div class="stub-sub">Sus 2</div><div class="stub-diagram"><span class="stub-dot" style="left:40%;top:55%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">Dsus4</div><div class="stub-sub">Sus 4</div><div class="stub-diagram"><span class="stub-dot" style="left:40%;top:35%"></span><span class="stub-dot" style="left:55%;top:55%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">D6</div><div class="stub-sub">Maj 6</div><div class="stub-diagram"><span class="stub-dot" style="left:30%;top:55%"></span><span class="stub-dot" style="left:50%;top:55%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">Dm6</div><div class="stub-sub">Min 6</div><div class="stub-diagram"><span class="stub-dot" style="left:30%;top:55%"></span><span class="stub-dot" style="left:55%;top:65%"></span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="vp-nav">
+      <span>Chords</span><span class="active">Songs</span><span>Playground</span><span>Settings</span>
+    </div>
+  </div>
+  <div class="pros-cons">
+    <div class="col good">
+      <h3>Pros</h3>
+      <ul>
+        <li>Index-book ergonomics — instantly scan all roots</li>
+        <li>Doesn't compete with horizontal scroll</li>
+        <li>Sticks naturally; doesn't feel like a banner</li>
+      </ul>
+    </div>
+    <div class="col bad">
+      <h3>Cons</h3>
+      <ul>
+        <li>Consumes width — chord cards get narrower</li>
+        <li>On mobile the rail needs to collapse or move</li>
+      </ul>
+    </div>
+  </div>
+  <div class="pick-row">
+    <button class="pick-btn" onclick="pickIt('A: Left rail')">Use Option A</button>
+  </div>
+</section>
+
+<!-- ============ B — RIGHT RAIL ============ -->
+<section class="mockup">
+  <div class="mockup-head">
+    <span class="tag">Option B</span>
+    <h2>Right vertical rail</h2>
+    <span class="gist">Mirrored rail — keeps left edge free for scroll & content</span>
+  </div>
+  <div class="viewport">
+    <div class="vp-B">
+      <div class="vp-B-header">
+        <div class="vp-B-title">Chord Cheat Sheet</div>
+        <div class="vp-B-controls">
+          <span>Piano</span>
+          <span class="on">Guitar</span>
+        </div>
+      </div>
+      <div class="vp-B-content">
+        <div class="vp-section">Triads</div>
+        <div class="vp-B-cards">
+          <div class="card-stub"><div class="stub-title">D5</div><div class="stub-sub">Power</div><div class="stub-diagram"><span class="stub-dot" style="left:45%;top:45%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">D</div><div class="stub-sub">Major</div><div class="stub-diagram"><span class="stub-dot" style="left:35%;top:25%"></span><span class="stub-dot" style="left:65%;top:50%"></span><span class="stub-dot" style="left:45%;top:60%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">Dm</div><div class="stub-sub">Minor</div><div class="stub-diagram"><span class="stub-dot" style="left:30%;top:25%"></span><span class="stub-dot" style="left:60%;top:50%"></span><span class="stub-dot" style="left:70%;top:65%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">Ddim</div><div class="stub-sub">Dim</div><div class="stub-diagram"><span class="stub-dot" style="left:40%;top:60%"></span><span class="stub-dot" style="left:55%;top:65%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">Dsus2</div><div class="stub-sub">Sus 2</div><div class="stub-diagram"><span class="stub-dot" style="left:40%;top:55%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">Dsus4</div><div class="stub-sub">Sus 4</div><div class="stub-diagram"><span class="stub-dot" style="left:40%;top:35%"></span><span class="stub-dot" style="left:55%;top:55%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">D6</div><div class="stub-sub">Maj 6</div><div class="stub-diagram"><span class="stub-dot" style="left:30%;top:55%"></span><span class="stub-dot" style="left:50%;top:55%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">Dm6</div><div class="stub-sub">Min 6</div><div class="stub-diagram"><span class="stub-dot" style="left:30%;top:55%"></span><span class="stub-dot" style="left:55%;top:65%"></span></div></div>
+        </div>
+      </div>
+      <aside class="vp-rail-right">
+        <div class="rail-key">C</div>
+        <div class="rail-key">C♯</div>
+        <div class="rail-key active">D</div>
+        <div class="rail-key">D♯</div>
+        <div class="rail-key">E</div>
+        <div class="rail-key">F</div>
+        <div class="rail-key">F♯</div>
+        <div class="rail-key">G</div>
+        <div class="rail-key">G♯</div>
+        <div class="rail-key">A</div>
+        <div class="rail-key">A♯</div>
+        <div class="rail-key">B</div>
+      </aside>
+    </div>
+    <div class="vp-nav">
+      <span class="active">Chords</span><span>Songs</span><span>Playground</span><span>Settings</span>
+    </div>
+  </div>
+  <div class="pros-cons">
+    <div class="col good">
+      <h3>Pros</h3>
+      <ul>
+        <li>Stays out of the way of reading order (chords on the left)</li>
+        <li>Thumb-reachable on right-handed phones</li>
+        <li>Matches Apple's "scrubber on the right" patterns (Music, Contacts)</li>
+      </ul>
+    </div>
+    <div class="col bad">
+      <h3>Cons</h3>
+      <ul>
+        <li>Fights with the right-side nav if user picked placement=right</li>
+        <li>Still consumes width</li>
+      </ul>
+    </div>
+  </div>
+  <div class="pick-row">
+    <button class="pick-btn" onclick="pickIt('B: Right rail')">Use Option B</button>
+  </div>
+</section>
+
+<!-- ============ C — FLOATING ROOT CAPSULE ============ -->
+<section class="mockup">
+  <div class="mockup-head">
+    <span class="tag">Option C</span>
+    <h2>Floating glass capsule</h2>
+    <span class="gist">Detached pill that hovers over content — pure liquid-glass</span>
+  </div>
+  <div class="viewport">
+    <div class="vp-C">
+      <div class="vp-C-header">
+        <div class="vp-C-title">Chord Cheat Sheet</div>
+        <div class="vp-C-controls">
+          <span>Piano</span>
+          <span class="on">Guitar</span>
+        </div>
+      </div>
+      <div class="vp-C-content">
+        <div class="vp-section">Triads</div>
+        <div class="vp-C-cards">
+          <div class="card-stub"><div class="stub-title">D5</div><div class="stub-sub">Power</div><div class="stub-diagram"><span class="stub-dot" style="left:45%;top:45%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">D</div><div class="stub-sub">Major</div><div class="stub-diagram"><span class="stub-dot" style="left:35%;top:25%"></span><span class="stub-dot" style="left:65%;top:50%"></span><span class="stub-dot" style="left:45%;top:60%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">Dm</div><div class="stub-sub">Minor</div><div class="stub-diagram"><span class="stub-dot" style="left:30%;top:25%"></span><span class="stub-dot" style="left:60%;top:50%"></span><span class="stub-dot" style="left:70%;top:65%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">Ddim</div><div class="stub-sub">Dim</div><div class="stub-diagram"><span class="stub-dot" style="left:40%;top:60%"></span><span class="stub-dot" style="left:55%;top:65%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">Dsus2</div><div class="stub-sub">Sus 2</div><div class="stub-diagram"><span class="stub-dot" style="left:40%;top:55%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">Dsus4</div><div class="stub-sub">Sus 4</div><div class="stub-diagram"><span class="stub-dot" style="left:40%;top:35%"></span><span class="stub-dot" style="left:55%;top:55%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">D6</div><div class="stub-sub">Maj 6</div><div class="stub-diagram"><span class="stub-dot" style="left:30%;top:55%"></span><span class="stub-dot" style="left:50%;top:55%"></span></div></div>
+          <div class="card-stub"><div class="stub-title">Dm6</div><div class="stub-sub">Min 6</div><div class="stub-diagram"><span class="stub-dot" style="left:30%;top:55%"></span><span class="stub-dot" style="left:55%;top:65%"></span></div></div>
+        </div>
+      </div>
+      <div class="vp-root-capsule">
+        <div class="cap-key">C</div>
+        <div class="cap-key">C♯</div>
+        <div class="cap-key active">D</div>
+        <div class="cap-key">D♯</div>
+        <div class="cap-key">E</div>
+        <div class="cap-key">F</div>
+        <div class="cap-key">F♯</div>
+        <div class="cap-key">G</div>
+        <div class="cap-key">G♯</div>
+        <div class="cap-key">A</div>
+        <div class="cap-key">A♯</div>
+        <div class="cap-key">B</div>
+      </div>
+    </div>
+    <div class="vp-nav">
+      <span class="active">Chords</span><span>Songs</span><span>Playground</span><span>Settings</span>
+    </div>
+  </div>
+  <div class="pros-cons">
+    <div class="col good">
+      <h3>Pros</h3>
+      <ul>
+        <li>Reads as one ecosystem with the floating nav — same material everywhere</li>
+        <li>Doesn't reserve page width — cards stay full-width</li>
+        <li>Could shrink/expand on hover for a delightful interaction</li>
+      </ul>
+    </div>
+    <div class="col bad">
+      <h3>Cons</h3>
+      <ul>
+        <li>Overlaps content — could obscure the last column of cards</li>
+        <li>Needs more careful auto-hide logic when scrolling fast</li>
+      </ul>
+    </div>
+  </div>
+  <div class="pick-row">
+    <button class="pick-btn" onclick="pickIt('C: Floating glass capsule')">Use Option C</button>
+  </div>
+</section>
+
+<!-- ============ D — SCROLL SNAP WITH POSITION INDICATOR ============ -->
+<section class="mockup">
+  <div class="mockup-head">
+    <span class="tag">Option D</span>
+    <h2>One page per root + position dots</h2>
+    <span class="gist">Each root is a long section; a thin dot column shows where you are</span>
+  </div>
+  <div class="viewport">
+    <div class="vp-D">
+      <div class="vp-D-header">
+        <div class="vp-D-title">Chord Cheat Sheet</div>
+        <div class="vp-D-controls">
+          <span>Piano</span>
+          <span class="on">Guitar</span>
+        </div>
+      </div>
+      <aside class="vp-indicator-col">
+        <span class="dot"></span><span class="key-label">C</span>
+        <span class="dot"></span><span class="key-label">C♯</span>
+        <span class="dot active"></span><span class="key-label active">D</span>
+        <span class="dot"></span><span class="key-label">D♯</span>
+        <span class="dot"></span><span class="key-label">E</span>
+        <span class="dot"></span><span class="key-label">F</span>
+        <span class="dot"></span><span class="key-label">F♯</span>
+        <span class="dot"></span><span class="key-label">G</span>
+        <span class="dot"></span><span class="key-label">G♯</span>
+        <span class="dot"></span><span class="key-label">A</span>
+        <span class="dot"></span><span class="key-label">A♯</span>
+        <span class="dot"></span><span class="key-label">B</span>
+      </aside>
+      <div class="vp-D-content">
+        <div class="vp-D-section">
+          <div class="vp-D-section-head">D · Triads</div>
+          <div class="vp-D-cards">
+            <div class="card-stub"><div class="stub-title">D5</div><div class="stub-diagram"><span class="stub-dot" style="left:45%;top:45%"></span></div></div>
+            <div class="card-stub"><div class="stub-title">D</div><div class="stub-diagram"><span class="stub-dot" style="left:35%;top:25%"></span><span class="stub-dot" style="left:65%;top:50%"></span></div></div>
+            <div class="card-stub"><div class="stub-title">Dm</div><div class="stub-diagram"><span class="stub-dot" style="left:30%;top:25%"></span><span class="stub-dot" style="left:60%;top:50%"></span></div></div>
+            <div class="card-stub"><div class="stub-title">Ddim</div><div class="stub-diagram"><span class="stub-dot" style="left:40%;top:60%"></span></div></div>
+          </div>
+        </div>
+        <div class="vp-D-section">
+          <div class="vp-D-section-head">D · Sevenths</div>
+          <div class="vp-D-cards">
+            <div class="card-stub"><div class="stub-title">D7</div><div class="stub-diagram"><span class="stub-dot" style="left:35%;top:25%"></span></div></div>
+            <div class="card-stub"><div class="stub-title">Dmaj7</div><div class="stub-diagram"><span class="stub-dot" style="left:50%;top:35%"></span></div></div>
+            <div class="card-stub"><div class="stub-title">Dm7</div><div class="stub-diagram"><span class="stub-dot" style="left:55%;top:50%"></span></div></div>
+            <div class="card-stub"><div class="stub-title">D6</div><div class="stub-diagram"><span class="stub-dot" style="left:40%;top:55%"></span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="vp-nav">
+      <span class="active">Chords</span><span>Songs</span><span>Playground</span><span>Settings</span>
+    </div>
+  </div>
+  <div class="pros-cons">
+    <div class="col good">
+      <h3>Pros</h3>
+      <ul>
+        <li>Feels like a real cheat-sheet you scroll end-to-end</li>
+        <li>Position indicator is unobtrusive (no labels normally; expand on hover)</li>
+        <li>Scroll-snap makes flipping between roots feel deliberate</li>
+      </ul>
+    </div>
+    <div class="col bad">
+      <h3>Cons</h3>
+      <ul>
+        <li>Bigger overall page → SEO/perf consideration</li>
+        <li>Loading 12 roots × all qualities is heavy; needs virtualization</li>
+        <li>Random-access to a specific root takes one extra step (open the panel)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="pick-row">
+    <button class="pick-btn" onclick="pickIt('D: Scroll-snap with position dots')">Use Option D</button>
+  </div>
+</section>
+
+</div>
+
+<div class="toast" id="toast">Copied — paste it back in Claude</div>
+
+<script>
+  function pickIt(label) {
+    const txt = "Let's go with Option " + label + ". Build it.";
+    navigator.clipboard?.writeText(txt);
+    const t = document.getElementById('toast');
+    t.classList.add('on');
+    setTimeout(() => t.classList.remove('on'), 1600);
+  }
+</script>
+
+</body>
+</html>

@@ -9,9 +9,9 @@ import { ChordBrowser } from './ChordBrowser';
 import { CustomList } from './CustomList';
 
 export default function PianoApp() {
-  const activeTab = useAppStore(s => s.activeTab);
-  const compact = useAppStore(s => s.compact);
-  const hideRoot = useAppStore(s => s.hideRoot);
+  const activeTab = useAppStore((s) => s.activeTab);
+  const compact = useAppStore((s) => s.compact);
+  const hideRoot = useAppStore((s) => s.hideRoot);
 
   useEffect(() => {
     const cls = document.body.classList;
@@ -20,14 +20,22 @@ export default function PianoApp() {
     cls.toggle('hide-root', hideRoot);
   }, [compact, hideRoot]);
 
+  const isList = activeTab === '__custom__';
+
   return (
-    <>
+    <div className="cheatsheet-layout">
       <Header />
       <Tabs />
-      <main>
-        <Legend />
-        {activeTab === '__custom__' ? <CustomList /> : <ChordBrowser rootShort={activeTab} />}
+      <main className="cheatsheet-main">
+        {isList ? (
+          <>
+            <Legend />
+            <CustomList />
+          </>
+        ) : (
+          <ChordBrowser rootShort={activeTab} />
+        )}
       </main>
-    </>
+    </div>
   );
 }
