@@ -21,6 +21,7 @@ import { ChordPalette } from './ChordPalette';
 import { Roadmap } from './Roadmap';
 import { SpotifyPanel } from './SpotifyPanel';
 import { SongToolbar } from './SongToolbar';
+import { StageReader } from './StageReader';
 import { useAutoscroll } from './useAutoscroll';
 import { StickyNote, NOTE_COLORS } from './StickyNote';
 import { extractTrackId } from '@/lib/spotify';
@@ -100,6 +101,7 @@ export function SongDetail({ id }: { id: string }) {
 function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: boolean }) {
   const [editingMeta, setEditingMeta] = useState(false);
   const [editingBody, setEditingBody] = useState(false);
+  const [stage, setStage] = useState(false);
   const layout = useAppStore((s) => s.songLayout);
   const setSongLayout = useAppStore((s) => s.setSongLayout);
   const gridPreset = useAppStore((s) => s.songGridPreset);
@@ -361,6 +363,7 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
           onToggleScroll={autoscroll.toggle}
           speed={autoscrollSpeed}
           setSpeed={setAutoscrollSpeed}
+          onStage={() => setStage(true)}
         />
       )}
 
@@ -426,6 +429,8 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
           onClose={toggleRoadmap}
         />
       )}
+
+      {stage && <StageReader song={song} onExit={() => setStage(false)} />}
     </main>
   );
 }

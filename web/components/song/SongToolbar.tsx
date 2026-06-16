@@ -20,6 +20,7 @@ export function SongToolbar({
   onToggleScroll,
   speed,
   setSpeed,
+  onStage,
 }: {
   transpose: number;
   onTranspose: (t: number) => void;
@@ -32,6 +33,7 @@ export function SongToolbar({
   onToggleScroll: () => void;
   speed: number;
   setSpeed: (n: number) => void;
+  onStage: () => void;
 }) {
   const sizeIdx = SIZES.indexOf(lyricSize);
   const stepSize = (dir: -1 | 1) => {
@@ -136,6 +138,16 @@ export function SongToolbar({
         <LyricsIcon />
         <span className="stb-pill-label">Lyrics</span>
       </button>
+
+      <button
+        type="button"
+        className="stb-pill press-spring"
+        onClick={onStage}
+        title="Stage mode — full-screen, screen-awake reader"
+      >
+        <StageIcon />
+        <span className="stb-pill-label">Stage</span>
+      </button>
     </div>
   );
 }
@@ -175,6 +187,14 @@ function LyricsIcon() {
   return (
     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M4 7h16M4 12h12M4 17h8" />
+    </svg>
+  );
+}
+function StageIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 8h18M5 8v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" />
+      <path d="M3 8l3-4h12l3 4" />
     </svg>
   );
 }

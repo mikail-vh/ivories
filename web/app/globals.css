@@ -2170,6 +2170,77 @@ body.light .home-hero h1 {
 }
 body.light .chip { color: var(--accent-text); }
 
+/* Guitar diagrams in the song chord-strip: keep cards compact. */
+.palette-guitar .palette-card .chord-diagram { max-height: 168px; }
+
+/* ========== Stage mode (full-screen performance reader) ========== */
+.stage-reader {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: #000;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  animation: fade-in var(--dur) var(--ease-out);
+}
+.stage-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex: 0 0 auto;
+  padding: 12px clamp(12px, 3vw, 28px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.stage-bar-title { display: flex; flex-direction: column; min-width: 0; }
+.stage-bar-title strong { font-size: var(--text-lg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stage-bar-title span { font-size: var(--text-sm); color: rgba(255, 255, 255, 0.6); }
+.stage-bar-controls { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; }
+.stage-btn, .stage-exit {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  border-radius: var(--radius-full);
+  padding: 8px 14px;
+  min-height: 40px;
+  font-weight: 700;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.stage-btn:hover, .stage-exit:hover { background: rgba(255, 255, 255, 0.18); }
+.stage-play.on { background: var(--accent); color: var(--accent-contrast); }
+.stage-exit { background: rgba(255, 80, 80, 0.16); color: #ff9a9a; }
+.stage-speed {
+  -webkit-appearance: none; appearance: none; background: transparent;
+  width: 88px; height: 22px; cursor: pointer;
+}
+.stage-speed::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 999px;
+  background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--pct, 0%), rgba(255,255,255,0.18) var(--pct, 0%), rgba(255,255,255,0.18) 100%);
+}
+.stage-speed::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: #fff; border: none; cursor: pointer; }
+.stage-speed::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: none; }
+.stage-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: clamp(16px, 4vw, 56px);
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+}
+.stage-tailroom { height: 55vh; }
+/* In stage mode, strip card chrome — just big, high-contrast text. */
+.stage-reader .song-section { background: transparent; border: none; box-shadow: none; padding: 0 0 28px; }
+.stage-reader .song-section-name { background: rgba(255, 255, 255, 0.12); color: #fff; border-color: transparent; }
+.stage-reader .section-chorus { border-left: 3px solid var(--accent); padding-left: 14px; }
+.stage-reader .section-bridge { border-left: 3px solid var(--color-note); padding-left: 14px; }
+.stage-reader .chunk-text { color: #fff; }
+.stage-reader .chunk-chord, .stage-reader .chord-slash, .stage-reader .chord-paren { color: var(--accent); }
+.stage-reader .song-line-comment { color: rgba(255, 255, 255, 0.6); }
+
 /* ========== Command palette (⌘K) ========== */
 .cmdk-backdrop {
   position: fixed;
