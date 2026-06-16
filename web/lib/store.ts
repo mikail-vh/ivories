@@ -107,6 +107,10 @@ type State = {
   fretboardFlipped: boolean;
   /* Where the floating liquid-glass nav lives. */
   navPlacement: NavPlacement;
+  /* Song library: starred song IDs, and most-recently-opened IDs (newest
+   * first, capped) for the home dashboard's "jump back in" shelf. */
+  favoriteSongs: string[];
+  recentSongs: string[];
 } & AudioSettings;
 
 type Actions = {
@@ -134,6 +138,8 @@ type Actions = {
   togglePlaygroundLabels: () => void;
   toggleFretboardFlipped: () => void;
   setNavPlacement: (placement: NavPlacement) => void;
+  toggleFavoriteSong: (id: string) => void;
+  markSongOpened: (id: string) => void;
 
   isFavorited: (item: FavoriteItem) => boolean;
   toggleFavorite: (item: FavoriteItem) => void;
@@ -178,6 +184,8 @@ export const useAppStore = create<State & Actions>()(
       playgroundShowLabels: false,
       fretboardFlipped: false,
       navPlacement: 'bottom',
+      favoriteSongs: [],
+      recentSongs: [],
       ...AUDIO_DEFAULTS,
 
       setActiveTab: (tab) => set({ activeTab: tab }),
@@ -204,6 +212,14 @@ export const useAppStore = create<State & Actions>()(
       togglePlaygroundLabels: () => set({ playgroundShowLabels: !get().playgroundShowLabels }),
       toggleFretboardFlipped: () => set({ fretboardFlipped: !get().fretboardFlipped }),
       setNavPlacement: (placement) => set({ navPlacement: placement }),
+      toggleFavoriteSong: (id) => {
+        const cur = get().favoriteSongs;
+        set({ favoriteSongs: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] });
+      },
+      markSongOpened: (id) => {
+        const next = [id, ...get().recentSongs.filter((x) => x !== id)].slice(0, 12);
+        set({ recentSongs: next });
+      },
 
       isFavorited: (item) => {
         const page = get().pages.find(p => p.id === get().activePageId);

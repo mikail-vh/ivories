@@ -115,6 +115,9 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
   const toggleLyricsOnly = useAppStore((s) => s.toggleLyricsOnly);
   const autoscrollSpeed = useAppStore((s) => s.autoscrollSpeed);
   const setAutoscrollSpeed = useAppStore((s) => s.setAutoscrollSpeed);
+  const markSongOpened = useAppStore((s) => s.markSongOpened);
+
+  useEffect(() => { markSongOpened(song.id); }, [song.id, markSongOpened]);
 
   const songMainRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLElement>(null);
