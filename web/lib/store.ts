@@ -85,6 +85,11 @@ type State = {
    * card and longer lines are less likely to wrap. Applied as a CSS variable
    * on the song-page so all chunk text scales together. */
   lyricSize: LyricSize;
+  /* Hide chords in the song body for lyric-only rehearsal reading. */
+  lyricsOnly: boolean;
+  /* Auto-scroll speed multiplier for the song reader (0.25..4). Persisted so a
+   * comfortable pace carries between songs. */
+  autoscrollSpeed: number;
   /* Spotify embed volume (0..1). Persisted so users don't have to drop it
    * every time they open a song. Applied via the IFrame Embed API. */
   spotifyVolume: number;
@@ -120,6 +125,8 @@ type Actions = {
   setLayoutExpanded: (expanded: boolean) => void;
   setChordPaletteSide: (side: 'left' | 'right') => void;
   setLyricSize: (size: LyricSize) => void;
+  toggleLyricsOnly: () => void;
+  setAutoscrollSpeed: (speed: number) => void;
   setSpotifyVolume: (volume: number) => void;
   setChordView: (view: ChordView) => void;
   setGuitarTone: (tone: GuitarTone) => void;
@@ -162,6 +169,8 @@ export const useAppStore = create<State & Actions>()(
       songLayout: 'flow',
       songGridPreset: 'auto',
       lyricSize: 'md',
+      lyricsOnly: false,
+      autoscrollSpeed: 1,
       spotifyVolume: 0.7,
       chordView: 'piano',
       guitarTone: 'acoustic',
@@ -186,6 +195,8 @@ export const useAppStore = create<State & Actions>()(
       setLayoutExpanded: (expanded) => set({ layoutExpanded: expanded }),
       setChordPaletteSide: (side) => set({ chordPaletteSide: side }),
       setLyricSize: (size) => set({ lyricSize: size }),
+      toggleLyricsOnly: () => set({ lyricsOnly: !get().lyricsOnly }),
+      setAutoscrollSpeed: (speed) => set({ autoscrollSpeed: Math.max(0.25, Math.min(4, speed)) }),
       setSpotifyVolume: (volume) => set({ spotifyVolume: Math.max(0, Math.min(1, volume)) }),
       setChordView: (view) => set({ chordView: view }),
       setGuitarTone: (tone) => set({ guitarTone: tone }),

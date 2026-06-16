@@ -2318,6 +2318,144 @@ body.light .key-chip-info.transposed { color: var(--accent-text); }
   color: var(--accent-contrast);
 }
 
+/* ===== Song performance toolbar (sticky glass pill) ===== */
+.song-toolbar {
+  position: sticky;
+  top: 4px;
+  z-index: var(--z-overlay);
+  /* Centre in both layout contexts: margin auto for the >=2000px block layout,
+   * align-self for the flex-column layout used below 2000px. */
+  margin: 0 auto 18px;
+  align-self: center;
+  width: fit-content;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 8px;
+  border-radius: var(--radius-full);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.song-toolbar::-webkit-scrollbar { display: none; }
+.stb-group { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.stb-btn {
+  appearance: none;
+  background: transparent;
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.stb-btn:hover { background: var(--glass-hover); }
+.stb-btn:disabled { opacity: 0.3; cursor: default; }
+.stb-btn:disabled:hover { background: transparent; }
+.stb-play.on { background: var(--accent); color: var(--accent-contrast); }
+.stb-a-small { font-size: 0.78rem; font-weight: 800; }
+.stb-a-large { font-size: 1.15rem; font-weight: 800; }
+
+.stb-readout {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3px 12px;
+  min-width: 58px;
+  background: var(--surface-2);
+  border-radius: var(--radius-full);
+  color: var(--text);
+}
+.stb-readout-cap {
+  font-size: 0.56rem;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text-dim);
+  font-weight: 700;
+  line-height: 1;
+}
+.stb-readout-val {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+.stb-readout.changed .stb-readout-val { color: var(--accent-text); }
+
+.stb-divider { width: 1px; height: 22px; background: var(--glass-rim); flex: 0 0 auto; }
+
+.stb-speed {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  width: 84px;
+  height: 22px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.stb-speed::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--pct, 0%), var(--surface-2) var(--pct, 0%), var(--surface-2) 100%);
+}
+.stb-speed::-moz-range-track { height: 4px; border-radius: 999px; background: var(--surface-2); }
+.stb-speed::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--text);
+  border: none;
+  cursor: pointer;
+}
+.stb-speed::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--text); border: none; }
+.stb-speed-val {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  min-width: 26px;
+  flex: 0 0 auto;
+}
+
+.stb-pill {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.stb-pill:hover { color: var(--text); }
+.stb-pill.on { background: var(--accent); color: var(--accent-contrast); }
+
+@media (max-width: 560px) {
+  .song-toolbar { width: 100%; justify-content: flex-start; }
+  .stb-pill-label { display: none; }
+}
+
+/* Lyrics-only reading: hide chord buttons + collapse the chord row. */
+.song-page.lyrics-only .chunk-chord,
+.song-page.lyrics-only .chunk-chord-spacer,
+.song-page.lyrics-only .chunk-chord-slash { display: none; }
+.song-page.lyrics-only .song-line { min-height: 0; }
+.song-page.lyrics-only .song-line-lyric { padding: 2px 0; }
+
 /* Song body rendering */
 .song-body {
   font-size: 1rem;

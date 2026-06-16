@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSong, songsRepo, rehydrateSongs } from '@/lib/storage';
 import { useAppStore } from '@/lib/store';
@@ -20,6 +20,8 @@ import { SongRenderer, type CanvasHandlers } from './SongRenderer';
 import { ChordPalette } from './ChordPalette';
 import { Roadmap } from './Roadmap';
 import { SpotifyPanel } from './SpotifyPanel';
+import { SongToolbar } from './SongToolbar';
+import { useAutoscroll } from './useAutoscroll';
 import { StickyNote, NOTE_COLORS } from './StickyNote';
 import { extractTrackId } from '@/lib/spotify';
 import type { GridPreset, LyricSize } from '@/lib/store';
@@ -109,10 +111,19 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
   const setChordPaletteSide = useAppStore((s) => s.setChordPaletteSide);
   const lyricSize = useAppStore((s) => s.lyricSize);
   const setLyricSize = useAppStore((s) => s.setLyricSize);
+  const lyricsOnly = useAppStore((s) => s.lyricsOnly);
+  const toggleLyricsOnly = useAppStore((s) => s.toggleLyricsOnly);
+  const autoscrollSpeed = useAppStore((s) => s.autoscrollSpeed);
+  const setAutoscrollSpeed = useAppStore((s) => s.setAutoscrollSpeed);
 
   const songMainRef = useRef<HTMLDivElement>(null);
+  const pageRef = useRef<HTMLElement>(null);
   const trayRef = useRef<HTMLDivElement>(null);
   const [draggingSection, setDraggingSection] = useState(false);
+
+  /* Hands-free auto-scroll drives the song-page scroll container. */
+  const getScrollEl = useCallback(() => pageRef.current, []);
+  const autoscroll = useAutoscroll(getScrollEl, autoscrollSpeed);
 
   const notesByLine = useMemo(() => {
     const map: Record<string, StickyNoteType[]> = {};
@@ -166,6 +177,12 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
   const arrangement = song.arrangement;
   const effectiveArrangement = layout === 'grid' ? arrangement : undefined;
   const customizing = layout === 'grid' && arrangement !== undefined;
+
+  /* Pause auto-scroll whenever we leave the reader (edit/customize modes hide
+   * the toolbar but the scroll loop lives here on the parent). */
+  useEffect(() => {
+    if (editingBody || customizing) autoscroll.stop();
+  }, [editingBody, customizing, autoscroll]);
   const { tray: traySections } = useMemo(
     () => applyArrangement(parsedSections, effectiveArrangement),
     [parsedSections, effectiveArrangement],
@@ -261,10 +278,13 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
     showPalette ? 'with-palette' : '',
     showPalette && chordPaletteSide === 'left' ? 'palette-left' : '',
     customizing ? 'customizing' : '',
+    lyricsOnly ? 'lyrics-only' : '',
   ].filter(Boolean).join(' ');
 
+  const keyLabel = effectiveKeyLabel(song);
+
   return (
-    <main className={pageClass}>
+    <main className={pageClass} ref={pageRef}>
       {/* Song meta is a top-level sibling (not inside `.song-main`) so CSS
        * order can place it above the palette on narrow viewports while the
        * palette goes between meta and body. */}
@@ -324,6 +344,22 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
           </div>
         )}
       </header>
+
+      {!editingBody && !customizing && (
+        <SongToolbar
+          transpose={song.transpose}
+          onTranspose={(t) => updateSong({ transpose: t })}
+          keyLabel={keyLabel}
+          lyricSize={lyricSize}
+          setLyricSize={setLyricSize}
+          lyricsOnly={lyricsOnly}
+          toggleLyricsOnly={toggleLyricsOnly}
+          scrolling={autoscroll.playing}
+          onToggleScroll={autoscroll.toggle}
+          speed={autoscrollSpeed}
+          setSpeed={setAutoscrollSpeed}
+        />
+      )}
 
       {showPalette && (
         <div className="song-rail">
