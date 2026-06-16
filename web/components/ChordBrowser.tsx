@@ -23,7 +23,7 @@ export function ChordBrowser({ rootShort }: { rootShort: string }) {
             <div className="section-title">{cat}</div>
             <div className="grid">
               {items.map(x => (
-                <ChordCard key={`${cat}-${x.i}`} rootPc={root.pc} chord={x.c} idx={x.i} />
+                <ChordCard key={`${cat}-${x.i}`} rootPc={root.pc} chord={x.c} idx={x.i} domId={`cc-${x.i}`} />
               ))}
             </div>
           </div>
@@ -35,7 +35,7 @@ export function ChordBrowser({ rootShort }: { rootShort: string }) {
           <div className="section-title">Scales</div>
           <div className="grid">
             {SCALES.map((s, i) => (
-              <ScaleCard key={`s-${i}`} rootPc={root.pc} scale={s} idx={i} />
+              <ScaleCard key={`s-${i}`} rootPc={root.pc} scale={s} idx={i} domId={`sc-${i}`} />
             ))}
           </div>
         </>

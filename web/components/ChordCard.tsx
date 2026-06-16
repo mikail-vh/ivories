@@ -16,6 +16,8 @@ type Props = {
   chord: Chord;
   idx: number;
   reorder?: React.ReactNode;
+  /* Optional DOM id so chord-by-name search can scroll the card into view. */
+  domId?: string;
 };
 
 export function ChordCard(props: Props) {
@@ -24,13 +26,13 @@ export function ChordCard(props: Props) {
   return <PianoChordCard {...props} />;
 }
 
-function PianoChordCard({ rootPc, chord, idx, reorder }: Props) {
+function PianoChordCard({ rootPc, chord, idx, reorder, domId }: Props) {
   const hideRoot = useAppStore(s => s.hideRoot);
   const pcs = pitchClassesFor(rootPc, chord.intervals);
   const midis = midisFor(rootPc, chord.intervals);
 
   return (
-    <div className="card">
+    <div className="card" id={domId}>
       <div className="card-header">
         <div className="card-titles">
           <h3 className="card-title">{chordTitle(rootPc, chord)}</h3>
@@ -50,7 +52,7 @@ function PianoChordCard({ rootPc, chord, idx, reorder }: Props) {
   );
 }
 
-function GuitarChordCard({ rootPc, chord, idx, reorder }: Props) {
+function GuitarChordCard({ rootPc, chord, idx, reorder, domId }: Props) {
   const guitarTone = useAppStore(s => s.guitarTone);
   const orientation = useAppStore(s => s.fretboardOrientation);
   const flipped = useAppStore(s => s.fretboardFlipped);
@@ -60,7 +62,7 @@ function GuitarChordCard({ rootPc, chord, idx, reorder }: Props) {
   const title = chordTitle(rootPc, chord);
 
   return (
-    <div className="card guitar-chord-card">
+    <div className="card guitar-chord-card" id={domId}>
       <div className="card-header">
         <div className="card-titles">
           <h3 className="card-title">{title}</h3>

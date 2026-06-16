@@ -170,10 +170,14 @@ export function transposeChord(sym: string, semis: number, useFlats = false): st
 export function findKnownChord(quality: string): Chord | null {
   const stripped = quality.replace(/\((?:no)?[0-9]+\)/g, '');
   const q = stripped.replace(/maj/i, 'maj').replace(/M(?![a-z])/, 'maj');
+  /* Normalise accidentals: parseChordSymbol emits ASCII (#/b) but our chord
+   * suffixes use Unicode (♯/♭), so e.g. `m7b5` must match `m7♭5`. */
+  const norm = (s: string) => s.replace(/♯/g, '#').replace(/♭/g, 'b').toLowerCase();
+  const nq = norm(q);
   const exact = CHORDS.find(c => c.suffix === q);
   if (exact) return exact;
-  const ci = CHORDS.find(c => c.suffix.toLowerCase() === q.toLowerCase());
-  if (ci) return ci;
+  const accidental = CHORDS.find(c => norm(c.suffix) === nq);
+  if (accidental) return accidental;
   return CHORDS.find(c => c.suffix === '') ?? null;
 }
 
