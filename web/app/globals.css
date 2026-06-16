@@ -1420,6 +1420,12 @@ body.light .setting-value { color: var(--accent-text); }
   padding: 0;
 }
 
+/* Library data (backup) actions */
+.data-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.data-msg { font-weight: 600; }
+.data-msg.ok { color: var(--accent-text); }
+.data-msg.err { color: var(--danger); }
+
 .settings-chord-preview {
   display: flex;
   justify-content: center;

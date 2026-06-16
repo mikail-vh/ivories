@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppStore, AUDIO_DEFAULTS, THEME_PRESETS, ACCENT_SWATCHES, type ChordView, type GuitarTone, type FretboardOrientation, type NavPlacement, type ThemeMode } from '@/lib/store';
 import { midisFor, playChord, playGuitarChord, playNote } from '@/lib/audio';
+import { downloadBackup, restoreBackup } from '@/lib/backup';
 import { generateVoicings, voicingMidis } from '@/lib/fretboard';
 import { ChordDiagram } from '@/components/song/ChordDiagram';
 
@@ -35,9 +36,25 @@ export default function SettingsPage() {
   const reduceGlass = useAppStore(s => s.reduceGlass);
   const toggleReduceGlass = useAppStore(s => s.toggleReduceGlass);
 
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [dataMsg, setDataMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+
   useEffect(() => {
     useAppStore.persist.rehydrate();
   }, []);
+
+  const onImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const { songs } = restoreBackup(text, { includePrefs: true });
+      setDataMsg({ kind: 'ok', text: `Imported ${songs} song${songs === 1 ? '' : 's'}.` });
+    } catch (err) {
+      setDataMsg({ kind: 'err', text: err instanceof Error ? err.message : 'Could not read that file.' });
+    }
+  };
 
   return (
     <main className="settings-page">
@@ -332,6 +349,37 @@ export default function SettingsPage() {
 
       <section className="settings-group">
         <header className="group-head">
+          <span className="group-icon"><DataIcon /></span>
+          <div>
+            <h2>Library data</h2>
+            <p>Your songs and settings live in this browser. Back them up so a cache clear can&rsquo;t wipe them.</p>
+          </div>
+        </header>
+        <div className="setting">
+          <div className="data-actions">
+            <button type="button" className="preview-btn" onClick={downloadBackup}>
+              <DownloadIcon /> Export backup
+            </button>
+            <button type="button" className="preview-btn" onClick={() => fileRef.current?.click()}>
+              <UploadIcon /> Import backup
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              className="visually-hidden"
+              onChange={onImportFile}
+            />
+          </div>
+          {dataMsg && (
+            <p className={`setting-hint data-msg ${dataMsg.kind}`} role="status">{dataMsg.text}</p>
+          )}
+          <p className="setting-hint">Importing merges songs by id (nothing is deleted) and restores your preferences.</p>
+        </div>
+      </section>
+
+      <section className="settings-group">
+        <header className="group-head">
           <span className="group-icon"><SpaceIcon /></span>
           <div>
             <h2>Space</h2>
@@ -506,6 +554,29 @@ function NavPreview({ placement }: { placement: NavPlacement }) {
   );
 }
 
+function DataIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <ellipse cx="12" cy="5" rx="8" ry="3" />
+      <path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5" />
+      <path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6" />
+    </svg>
+  );
+}
+function DownloadIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M5 21h14" />
+    </svg>
+  );
+}
+function UploadIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 21V9" /><path d="M7 14l5-5 5 5" /><path d="M5 3h14" />
+    </svg>
+  );
+}
 function PaletteIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
