@@ -2123,6 +2123,84 @@ body.light .home-hero h1 {
 }
 body.light .chip { color: var(--accent-text); }
 
+/* ========== Command palette (⌘K) ========== */
+.cmdk-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 16px 16px;
+}
+.cmdk {
+  width: 100%;
+  max-width: 560px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 70vh;
+}
+.cmdk-input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 14px 18px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--glass-rim);
+}
+.cmdk-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: var(--text-xl);
+  font-family: inherit;
+}
+.cmdk-input::placeholder { color: var(--text-faint); }
+.cmdk-esc {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 3px 7px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+.cmdk-list { list-style: none; margin: 0; padding: 8px; overflow-y: auto; }
+.cmdk-empty { padding: 18px; text-align: center; color: var(--text-dim); }
+.cmdk-group {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text-dim);
+  font-weight: 700;
+  padding: 10px 10px 4px;
+}
+.cmdk-item {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+}
+.cmdk-item.active { background: var(--accent); color: var(--accent-contrast); }
+.cmdk-item-label { font-weight: 600; font-size: var(--text-lg); }
+.cmdk-item-sub { font-size: var(--text-sm); color: var(--text-dim); }
+.cmdk-item.active .cmdk-item-sub { color: var(--accent-contrast); opacity: 0.82; }
+
 /* ========== Import dialog ========== */
 
 .dialog-backdrop {
