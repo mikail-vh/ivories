@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/lib/store';
+import { Metronome } from './Metronome';
 
 /* Floating glass toolbar at the top-right of every page. Hosts global controls
  * (theme) plus contextual controls for the active surface. Sits in the same
@@ -12,7 +13,7 @@ export function ViewToolbar() {
   const themeMode = useAppStore((s) => s.themeMode);
   const cycleTheme = useAppStore((s) => s.cycleTheme);
   const navPlacement = useAppStore((s) => s.navPlacement);
-  const isLight = themeMode === 'light';
+  const nextMode = themeMode === 'dark' ? 'Light' : themeMode === 'light' ? 'OLED' : 'Dark';
 
   const chordView = useAppStore((s) => s.chordView);
   const setChordView = useAppStore((s) => s.setChordView);
@@ -73,14 +74,15 @@ export function ViewToolbar() {
           <span className="tb-divider" aria-hidden="true" />
         </>
       )}
+      <Metronome />
       <button
         type="button"
         className="tb-icon-only"
         onClick={cycleTheme}
-        title={isLight ? 'Switch to dark theme' : 'Switch to light theme'}
-        aria-label="Toggle colour theme"
+        title={`Theme: ${themeMode} — tap for ${nextMode}`}
+        aria-label={`Colour theme: ${themeMode}. Tap to switch to ${nextMode}.`}
       >
-        {isLight ? <MoonIcon /> : <SunIcon />}
+        {themeMode === 'light' ? <MoonIcon /> : <SunIcon />}
       </button>
     </div>
   );

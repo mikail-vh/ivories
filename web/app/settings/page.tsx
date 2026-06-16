@@ -34,8 +34,6 @@ export default function SettingsPage() {
   const setAccent = useAppStore(s => s.setAccent);
   const reduceGlass = useAppStore(s => s.reduceGlass);
   const toggleReduceGlass = useAppStore(s => s.toggleReduceGlass);
-  const albumArtAccent = useAppStore(s => s.albumArtAccent);
-  const setAlbumArtAccent = useAppStore(s => s.setAlbumArtAccent);
 
   useEffect(() => {
     useAppStore.persist.rehydrate();
@@ -154,20 +152,6 @@ export default function SettingsPage() {
             </label>
           </div>
           <p className="setting-hint">Override just the accent while keeping the theme&rsquo;s background. &ldquo;Auto&rdquo; follows the theme.</p>
-        </div>
-
-        <div className="setting">
-          <div className="setting-row">
-            <span className="setting-label">Album-art accent</span>
-            <button
-              type="button"
-              className={`toggle ${albumArtAccent ? 'on' : ''}`}
-              role="switch"
-              aria-checked={albumArtAccent}
-              onClick={() => setAlbumArtAccent(!albumArtAccent)}
-            />
-          </div>
-          <p className="setting-hint">On a song with a linked Spotify track, tint the page accent from the album cover.</p>
         </div>
 
         <div className="setting">

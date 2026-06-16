@@ -584,6 +584,86 @@ button:disabled:hover { border-color: var(--border); }
 
 button.icon { padding: 7px 10px; }
 
+/* ===== Metronome (global, lives in the view toolbar) ===== */
+.metronome-host { position: relative; display: inline-flex; }
+.tb-icon-only.metronome-live { color: var(--accent); }
+.metronome-pop {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 248px;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  z-index: var(--z-popover);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.metronome-bpm { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.met-step {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 1.3rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.met-step:hover { background: var(--surface-hover); }
+.met-readout { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.met-bpm-val {
+  font-size: 2rem;
+  font-weight: 800;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  letter-spacing: -1px;
+}
+.met-bpm-cap { font-size: 0.6rem; letter-spacing: 2px; color: var(--text-dim); font-weight: 700; }
+.met-slider { -webkit-appearance: none; appearance: none; background: transparent; width: 100%; height: 18px; cursor: pointer; }
+.met-slider::-webkit-slider-runnable-track {
+  height: 5px; border-radius: 999px;
+  background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--pct, 50%), var(--surface-2) var(--pct, 50%), var(--surface-2) 100%);
+}
+.met-slider::-moz-range-track { height: 5px; border-radius: 999px; background: var(--surface-2); }
+.met-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px; margin-top: -5px;
+  border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); cursor: pointer;
+}
+.met-slider::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); }
+.met-beats { display: flex; justify-content: center; gap: 8px; }
+.met-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--surface-2);
+  transition: transform var(--dur-fast), background var(--dur-fast);
+}
+.met-dot.accent { background: color-mix(in srgb, var(--accent) 40%, var(--surface-2)); }
+.met-dot.on { background: var(--accent); transform: scale(1.35); }
+.met-row { display: flex; align-items: center; gap: var(--space-2); justify-content: space-between; }
+.met-sig { display: inline-flex; background: var(--surface-2); border-radius: var(--radius-full); padding: 2px; gap: 1px; }
+.met-sig button {
+  appearance: none; border: none; background: transparent; color: var(--text-dim);
+  font-size: 0.72rem; font-weight: 700; padding: 5px 8px; border-radius: var(--radius-full); cursor: pointer;
+}
+.met-sig button.active { background: var(--accent); color: var(--accent-contrast); }
+.met-tap {
+  appearance: none; border: none; cursor: pointer;
+  background: var(--surface-2); color: var(--text);
+  border-radius: var(--radius-full); padding: 6px 16px; font-weight: 700; font-size: var(--text-sm);
+}
+.met-tap:active { background: var(--accent); color: var(--accent-contrast); }
+.met-play {
+  appearance: none; border: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 11px; border-radius: var(--radius-md);
+  background: var(--accent); color: var(--accent-contrast); font-weight: 800; font-size: var(--text-md);
+}
+.met-play.on { background: var(--surface-2); color: var(--text); }
+
 /* ========== Cheat Sheet layout: title row + (rail + content) ========== */
 
 .cheatsheet-layout {
@@ -678,7 +758,9 @@ main {
 @media (max-width: 720px) {
   .cheatsheet-layout {
     grid-template-columns: 60px minmax(0, 1fr);
-    padding: 20px 14px;
+    /* Extra top padding clears the floating top-right view toolbar so the
+     * page title never tucks underneath it on phones. */
+    padding: calc(env(safe-area-inset-top, 0px) + 60px) 14px 20px;
     gap: 14px;
   }
   .rail-key { font-size: 0.86rem; padding: 8px 0; }
@@ -1720,6 +1802,14 @@ body.light .nav-preview-capsule {
   background-clip: text;
   color: transparent;
 }
+/* Light mode: use the darkened accent-text so the gradient tail stays legible
+ * on a light background (matches the settings/song headings). */
+body.light .home-hero h1 {
+  background: linear-gradient(135deg, var(--text) 36%, var(--accent-text));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 .home-tagline {
   margin: 12px 0 0;
   color: var(--text-dim);
@@ -1909,6 +1999,9 @@ body.light .nav-preview-capsule {
   font-family: inherit;
 }
 .library-search input::placeholder { color: var(--text-faint); }
+/* The global :where() focus ring has zero specificity and loses to this
+ * input's outline:none; restore a visible ring for keyboard users. */
+.library-search input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .library-search-clear {
   background: transparent;
   border: none;
@@ -2519,8 +2612,8 @@ body.light .key-chip-info.transposed { color: var(--accent-text); }
   appearance: none;
   background: transparent;
   border: none;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-full);
   display: inline-flex;
   align-items: center;
@@ -2543,8 +2636,10 @@ body.light .key-chip-info.transposed { color: var(--accent-text); }
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  padding: 3px 12px;
+  justify-content: center;
+  padding: 4px 12px;
   min-width: 58px;
+  min-height: 40px;
   background: var(--surface-2);
   border-radius: var(--radius-full);
   color: var(--text);
@@ -2609,7 +2704,8 @@ body.light .key-chip-info.transposed { color: var(--accent-text); }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 12px;
+  min-height: 40px;
+  padding: 8px 14px;
   border-radius: var(--radius-full);
   background: var(--surface-2);
   color: var(--text-dim);
@@ -2619,6 +2715,14 @@ body.light .key-chip-info.transposed { color: var(--accent-text); }
 }
 .stb-pill:hover { color: var(--text); }
 .stb-pill.on { background: var(--accent); color: var(--accent-contrast); }
+
+/* Comfortable 44px touch targets on the primary reader controls. */
+@media (pointer: coarse) {
+  .stb-btn { width: 44px; height: 44px; }
+  .stb-readout, .stb-pill { min-height: 44px; }
+  .stb-speed::-webkit-slider-thumb { width: 20px; height: 20px; margin-top: -8px; }
+  .stb-speed::-moz-range-thumb { width: 20px; height: 20px; }
+}
 
 @media (max-width: 560px) {
   .song-toolbar { width: 100%; justify-content: flex-start; }
@@ -3239,7 +3343,8 @@ body.light .roadmap-block-count { color: var(--accent-text); background: var(--a
 .song-section {
   position: relative;
   padding: 18px 22px 14px;
-  background: linear-gradient(180deg, var(--bg-elev) 0%, transparent 130%);
+  /* Opaque content surface (content layer never goes translucent). */
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
   transition: border-color 0.2s;

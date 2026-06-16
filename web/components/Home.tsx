@@ -20,7 +20,9 @@ export function Home() {
   const favoriteSongs = useAppStore((s) => s.favoriteSongs);
 
   useEffect(() => {
-    setGreet(greeting()); // client-only — avoids SSR/client time mismatch
+    // Deferred a microtask so it's client-only (no SSR/client time mismatch)
+    // and not a synchronous setState in the effect body.
+    Promise.resolve().then(() => setGreet(greeting()));
     useAppStore.persist.rehydrate();
     rehydrateSongs().then(() => setHydrated(true));
   }, []);

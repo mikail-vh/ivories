@@ -192,7 +192,11 @@ export const useAppStore = create<State & Actions>()(
       toggleHideRoot: () => set({ hideRoot: !get().hideRoot }),
       toggleCompact: () => set({ compact: !get().compact }),
       setThemeMode: (mode) => set({ themeMode: mode }),
-      cycleTheme: () => set({ themeMode: get().themeMode === 'light' ? 'dark' : 'light' }),
+      cycleTheme: () => {
+        const order: ThemeMode[] = ['dark', 'light', 'oled'];
+        const i = order.indexOf(get().themeMode);
+        set({ themeMode: order[(i + 1) % order.length] });
+      },
       setThemePreset: (preset) => set({ themePreset: preset }),
       setAccent: (hex) => set({ accent: hex }),
       toggleReduceGlass: () => set({ reduceGlass: !get().reduceGlass }),

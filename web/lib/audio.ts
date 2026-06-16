@@ -278,3 +278,34 @@ export function midisFor(rootPc: number, intervals: number[]): number[] {
   const baseMidi = 60 + rootPc;
   return intervals.map(i => baseMidi + i);
 }
+
+/* ===== Metronome ===== */
+
+/* Current audio-clock time, the reference for sample-accurate scheduling. */
+export function audioCurrentTime(): number {
+  const c = getCtx();
+  return c ? c.currentTime : 0;
+}
+
+/* Schedule a single dry metronome click `when` seconds from now. The accented
+ * downbeat is pitched higher and louder. Routed through the master bus (so it
+ * follows the volume setting) but NOT the reverb send — a click wants to stay
+ * crisp. A sine ping with a fast exponential decay reads as a clean tick. */
+export function scheduleClick(when: number, accent: boolean) {
+  const c = getCtx();
+  if (!c) return;
+  applySettings(c);
+  const t = c.currentTime + Math.max(0, when);
+  const osc = c.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.value = accent ? 1850 : 1300;
+  const g = c.createGain();
+  const peak = accent ? 0.5 : 0.32;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(peak, t + 0.002);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.045);
+  osc.connect(g);
+  g.connect(master ?? c.destination);
+  osc.start(t);
+  osc.stop(t + 0.06);
+}

@@ -43,7 +43,16 @@ export function useAutoscroll(
     return () => cancelAnimationFrame(raf);
   }, [playing, speed, getEl]);
 
-  const toggle = useCallback(() => setPlaying((p) => !p), []);
+  const toggle = useCallback(() => {
+    setPlaying((p) => {
+      if (p) return false;
+      /* Don't engage when there's nothing to scroll (song fits on screen),
+       * so the play button doesn't flip on then immediately off. */
+      const el = getEl();
+      if (el && el.scrollHeight - el.clientHeight < 2) return false;
+      return true;
+    });
+  }, [getEl]);
   const stop = useCallback(() => setPlaying(false), []);
 
   return { playing, toggle, stop, setPlaying };
