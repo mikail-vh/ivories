@@ -1247,6 +1247,97 @@ body.light .setting-value { color: var(--accent-text); }
   color: var(--accent-contrast);
 }
 
+/* ===== Appearance: theme presets + accent swatches ===== */
+.theme-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: var(--space-2);
+}
+.theme-swatch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition: border-color var(--dur-fast), transform var(--dur-fast), box-shadow var(--dur-fast);
+}
+.theme-swatch:hover { transform: translateY(-1px); border-color: var(--sw); }
+.theme-swatch.active {
+  border-color: var(--sw);
+  box-shadow: inset 0 0 0 1px var(--sw), 0 0 0 3px color-mix(in srgb, var(--sw) 26%, transparent);
+}
+.theme-swatch-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--sw);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--sw) 55%, transparent);
+  flex: 0 0 auto;
+}
+.theme-swatch-label { white-space: nowrap; }
+
+.accent-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+.accent-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--sw, var(--surface-2));
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px var(--border-soft);
+  cursor: pointer;
+  padding: 0;
+  transition: transform var(--dur-fast);
+}
+.accent-swatch:hover { transform: scale(1.08); }
+.accent-swatch.active {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--sw, var(--accent));
+}
+.accent-swatch.match {
+  width: auto;
+  height: 34px;
+  border-radius: var(--radius-full);
+  padding: 0 14px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text-dim);
+  background: var(--surface-2);
+  display: inline-flex;
+  align-items: center;
+}
+.accent-swatch.match.active {
+  color: var(--accent-text);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.accent-swatch.custom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  background: var(--surface-2);
+  position: relative;
+  overflow: hidden;
+}
+.accent-swatch.custom svg { width: 16px; height: 16px; }
+.accent-swatch.custom input[type="color"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+
 .settings-chord-preview {
   display: flex;
   justify-content: center;

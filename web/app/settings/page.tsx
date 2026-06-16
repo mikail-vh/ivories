@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useAppStore, AUDIO_DEFAULTS, type ChordView, type GuitarTone, type FretboardOrientation, type NavPlacement } from '@/lib/store';
+import { useAppStore, AUDIO_DEFAULTS, THEME_PRESETS, ACCENT_SWATCHES, type ChordView, type GuitarTone, type FretboardOrientation, type NavPlacement, type ThemeMode } from '@/lib/store';
 import { midisFor, playChord, playGuitarChord, playNote } from '@/lib/audio';
 import { generateVoicings, voicingMidis } from '@/lib/fretboard';
 import { ChordDiagram } from '@/components/song/ChordDiagram';
@@ -26,6 +26,16 @@ export default function SettingsPage() {
   const toggleFretboardFlipped = useAppStore(s => s.toggleFretboardFlipped);
   const navPlacement = useAppStore(s => s.navPlacement);
   const setNavPlacement = useAppStore(s => s.setNavPlacement);
+  const themeMode = useAppStore(s => s.themeMode);
+  const setThemeMode = useAppStore(s => s.setThemeMode);
+  const themePreset = useAppStore(s => s.themePreset);
+  const setThemePreset = useAppStore(s => s.setThemePreset);
+  const accent = useAppStore(s => s.accent);
+  const setAccent = useAppStore(s => s.setAccent);
+  const reduceGlass = useAppStore(s => s.reduceGlass);
+  const toggleReduceGlass = useAppStore(s => s.toggleReduceGlass);
+  const albumArtAccent = useAppStore(s => s.albumArtAccent);
+  const setAlbumArtAccent = useAppStore(s => s.setAlbumArtAccent);
 
   useEffect(() => {
     useAppStore.persist.rehydrate();
@@ -57,6 +67,123 @@ export default function SettingsPage() {
           </button>
         </div>
       </header>
+
+      <section className="settings-group">
+        <header className="group-head">
+          <span className="group-icon"><PaletteIcon /></span>
+          <div>
+            <h2>Appearance</h2>
+            <p>Make it yours — mode, colour theme, accent. Everything updates live.</p>
+          </div>
+        </header>
+
+        <div className="setting">
+          <div className="setting-row">
+            <span className="setting-label">Mode</span>
+            <SegmentedPicker<ThemeMode>
+              value={themeMode}
+              options={[
+                { value: 'dark',  label: 'Dark'  },
+                { value: 'light', label: 'Light' },
+                { value: 'oled',  label: 'OLED'  },
+              ]}
+              onChange={setThemeMode}
+            />
+          </div>
+          <p className="setting-hint">OLED is a true-black variant for AMOLED screens and dark stages.</p>
+        </div>
+
+        <div className="setting">
+          <span className="setting-label">Theme</span>
+          <div className="theme-swatches" role="radiogroup" aria-label="Colour theme">
+            {THEME_PRESETS.map((p) => {
+              const active = themePreset === p.id && !accent;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  className={`theme-swatch ${active ? 'active' : ''}`}
+                  style={{ '--sw': p.accent } as React.CSSProperties}
+                  onClick={() => { setThemePreset(p.id); setAccent(null); }}
+                  title={p.label}
+                >
+                  <span className="theme-swatch-dot" />
+                  <span className="theme-swatch-label">{p.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="setting-hint">Presets set the accent and the ambient background glow together.</p>
+        </div>
+
+        <div className="setting">
+          <span className="setting-label">Accent override</span>
+          <div className="accent-swatches" role="radiogroup" aria-label="Accent colour">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={!accent}
+              className={`accent-swatch match ${!accent ? 'active' : ''}`}
+              onClick={() => setAccent(null)}
+              title="Match the theme's accent"
+            >
+              Auto
+            </button>
+            {ACCENT_SWATCHES.map((hex) => (
+              <button
+                key={hex}
+                type="button"
+                role="radio"
+                aria-checked={accent === hex}
+                className={`accent-swatch ${accent === hex ? 'active' : ''}`}
+                style={{ '--sw': hex } as React.CSSProperties}
+                onClick={() => setAccent(hex)}
+                title={hex}
+              />
+            ))}
+            <label className="accent-swatch custom" title="Pick any colour">
+              <input
+                type="color"
+                value={accent ?? '#ffd43b'}
+                onChange={(e) => setAccent(e.target.value)}
+                aria-label="Custom accent colour"
+              />
+              <PlusIcon />
+            </label>
+          </div>
+          <p className="setting-hint">Override just the accent while keeping the theme&rsquo;s background. &ldquo;Auto&rdquo; follows the theme.</p>
+        </div>
+
+        <div className="setting">
+          <div className="setting-row">
+            <span className="setting-label">Album-art accent</span>
+            <button
+              type="button"
+              className={`toggle ${albumArtAccent ? 'on' : ''}`}
+              role="switch"
+              aria-checked={albumArtAccent}
+              onClick={() => setAlbumArtAccent(!albumArtAccent)}
+            />
+          </div>
+          <p className="setting-hint">On a song with a linked Spotify track, tint the page accent from the album cover.</p>
+        </div>
+
+        <div className="setting">
+          <div className="setting-row">
+            <span className="setting-label">Reduce glass</span>
+            <button
+              type="button"
+              className={`toggle ${reduceGlass ? 'on' : ''}`}
+              role="switch"
+              aria-checked={reduceGlass}
+              onClick={toggleReduceGlass}
+            />
+          </div>
+          <p className="setting-hint">Replace the translucent chrome with solid surfaces — calmer, and lighter on older devices.</p>
+        </div>
+      </section>
 
       <section className="settings-group">
         <header className="group-head">
@@ -392,6 +519,28 @@ function NavPreview({ placement }: { placement: NavPlacement }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function PaletteIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="13.5" cy="6.5" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="17.5" cy="10.5" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="8.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="6.5" cy="12.5" r="1.2" fill="currentColor" stroke="none" />
+      <path d="M12 2a10 10 0 1 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1 .8-1.8 1.8-1.8H16a6 6 0 0 0 6-6c0-4.4-4.5-8-10-8z" />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
   );
 }
 
