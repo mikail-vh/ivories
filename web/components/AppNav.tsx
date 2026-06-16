@@ -20,18 +20,12 @@ const SECTIONS: SectionDef[] = [
 
 export function AppNav() {
   const pathname = usePathname();
-  const theme = useAppStore(s => s.theme);
   const placement = useAppStore(s => s.navPlacement);
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
 
-  useEffect(() => {
-    useAppStore.persist.rehydrate();
-  }, []);
-
-  useEffect(() => {
-    document.body.classList.toggle('light', theme === 'light');
-  }, [theme]);
+  /* Theme application + store rehydration live in ThemeController (mounted in
+   * the root layout) so they run app-wide, including on the song page. */
 
   /* Drive the layout from a body class so page-level CSS can reserve space
    * for the nav in the right place. */

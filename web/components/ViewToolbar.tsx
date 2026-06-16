@@ -9,9 +9,10 @@ import { useAppStore } from '@/lib/store';
  * doesn't fight with any navPlacement choice. */
 export function ViewToolbar() {
   const pathname = usePathname();
-  const theme = useAppStore((s) => s.theme);
-  const toggleTheme = useAppStore((s) => s.toggleTheme);
+  const themeMode = useAppStore((s) => s.themeMode);
+  const cycleTheme = useAppStore((s) => s.cycleTheme);
   const navPlacement = useAppStore((s) => s.navPlacement);
+  const isLight = themeMode === 'light';
 
   const chordView = useAppStore((s) => s.chordView);
   const setChordView = useAppStore((s) => s.setChordView);
@@ -75,11 +76,11 @@ export function ViewToolbar() {
       <button
         type="button"
         className="tb-icon-only"
-        onClick={toggleTheme}
-        title={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
+        onClick={cycleTheme}
+        title={isLight ? 'Switch to dark theme' : 'Switch to light theme'}
         aria-label="Toggle colour theme"
       >
-        {theme === 'light' ? <MoonIcon /> : <SunIcon />}
+        {isLight ? <MoonIcon /> : <SunIcon />}
       </button>
     </div>
   );

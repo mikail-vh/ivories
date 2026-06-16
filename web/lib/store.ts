@@ -35,6 +35,28 @@ export type ChordView = 'piano' | 'guitar';
 export type GuitarTone = 'acoustic' | 'electric';
 export type FretboardOrientation = 'vertical' | 'horizontal';
 export type NavPlacement = 'bottom' | 'top' | 'right';
+export type ThemeMode = 'dark' | 'light' | 'oled';
+
+/* Theme presets set the accent + ambient blob hues (the CSS lives in
+ * globals.css under body[data-theme="…"]). `accent` here is the swatch shown
+ * in the settings picker. A custom accent in the store overrides the preset. */
+export type ThemePreset = { id: string; label: string; accent: string };
+export const THEME_PRESETS: ThemePreset[] = [
+  { id: 'amber',   label: 'Amber',   accent: '#ffd43b' },
+  { id: 'indigo',  label: 'Indigo',  accent: '#8c8cff' },
+  { id: 'sunset',  label: 'Sunset',  accent: '#ff9a5a' },
+  { id: 'emerald', label: 'Emerald', accent: '#34d6a0' },
+  { id: 'rose',    label: 'Rose',    accent: '#ff7a9c' },
+  { id: 'cyber',   label: 'Cyber',   accent: '#2ee6d6' },
+  { id: 'mono',    label: 'Mono',    accent: '#cfd4e0' },
+];
+
+/* Accent swatches offered by the custom picker. */
+export const ACCENT_SWATCHES = [
+  '#ffd43b', '#ff9a5a', '#ff7a9c', '#ff6b6b',
+  '#c084fc', '#8c8cff', '#4dabf7', '#2ee6d6',
+  '#34d6a0', '#a3e635', '#f472b6', '#cfd4e0',
+];
 
 type State = {
   pages: FavPage[];
@@ -42,7 +64,14 @@ type State = {
   activeTab: string;
   hideRoot: boolean;
   compact: boolean;
-  theme: 'dark' | 'light';
+  /* Theme system: base luminance mode + colour preset + optional custom accent
+   * hex (null = use the preset's accent). reduceGlass forces opaque chrome. */
+  themeMode: ThemeMode;
+  themePreset: string;
+  accent: string | null;
+  reduceGlass: boolean;
+  /* Tint the song page's accent from Spotify album art when available. */
+  albumArtAccent: boolean;
   showChordPalette: boolean;
   /* "Compact" keeps the song-page centered at 1280/1800 max-width; "expanded"
    * lets it fill the full viewport. Used to be called `chordPaletteFloating`
@@ -79,7 +108,12 @@ type Actions = {
   setActiveTab: (tab: string) => void;
   toggleHideRoot: () => void;
   toggleCompact: () => void;
-  toggleTheme: () => void;
+  setThemeMode: (mode: ThemeMode) => void;
+  cycleTheme: () => void;
+  setThemePreset: (preset: string) => void;
+  setAccent: (hex: string | null) => void;
+  toggleReduceGlass: () => void;
+  setAlbumArtAccent: (on: boolean) => void;
   toggleChordPalette: () => void;
   setSongLayout: (layout: 'flow' | 'grid') => void;
   setGridPreset: (preset: GridPreset) => void;
@@ -117,7 +151,11 @@ export const useAppStore = create<State & Actions>()(
       activeTab: 'C',
       hideRoot: false,
       compact: false,
-      theme: 'dark',
+      themeMode: 'dark',
+      themePreset: 'amber',
+      accent: null,
+      reduceGlass: false,
+      albumArtAccent: true,
       showChordPalette: true,
       layoutExpanded: false,
       chordPaletteSide: 'right',
@@ -136,7 +174,12 @@ export const useAppStore = create<State & Actions>()(
       setActiveTab: (tab) => set({ activeTab: tab }),
       toggleHideRoot: () => set({ hideRoot: !get().hideRoot }),
       toggleCompact: () => set({ compact: !get().compact }),
-      toggleTheme: () => set({ theme: get().theme === 'dark' ? 'light' : 'dark' }),
+      setThemeMode: (mode) => set({ themeMode: mode }),
+      cycleTheme: () => set({ themeMode: get().themeMode === 'light' ? 'dark' : 'light' }),
+      setThemePreset: (preset) => set({ themePreset: preset }),
+      setAccent: (hex) => set({ accent: hex }),
+      toggleReduceGlass: () => set({ reduceGlass: !get().reduceGlass }),
+      setAlbumArtAccent: (on) => set({ albumArtAccent: on }),
       toggleChordPalette: () => set({ showChordPalette: !get().showChordPalette }),
       setSongLayout: (layout) => set({ songLayout: layout }),
       setGridPreset: (preset) => set({ songGridPreset: preset }),
@@ -216,6 +259,24 @@ export const useAppStore = create<State & Actions>()(
     {
       name: 'piano-app:v1',
       skipHydration: true,
+      version: 2,
+      /* v0/v1 stored a binary `theme: 'dark' | 'light'`. v2 splits theming into
+       * mode + preset + custom accent + reduce-glass. Map the old flag forward
+       * and seed the new fields so existing libraries upgrade cleanly. */
+      migrate: (persisted, version) => {
+        const s = (persisted ?? {}) as Record<string, unknown>;
+        if (version < 2) {
+          if (s.themeMode === undefined) {
+            s.themeMode = s.theme === 'light' ? 'light' : 'dark';
+          }
+          if (s.themePreset === undefined) s.themePreset = 'amber';
+          if (s.accent === undefined) s.accent = null;
+          if (s.reduceGlass === undefined) s.reduceGlass = false;
+          if (s.albumArtAccent === undefined) s.albumArtAccent = true;
+          delete s.theme;
+        }
+        return s as unknown as State & Actions;
+      },
     }
   )
 );

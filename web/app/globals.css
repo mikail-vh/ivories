@@ -1,13 +1,53 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0f1115;
-  --bg-elev: #1a1d24;
-  --bg-elev-2: #232730;
-  --border: #2c3140;
-  --text: #e6e8ee;
-  --text-dim: #9aa0ad;
+  /* ============================================================
+   * STRUCTURAL SCALES — mode-independent. Use these instead of
+   * ad-hoc px/rem values so spacing/rhythm stays consistent.
+   * ============================================================ */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-7: 28px; --space-8: 32px;
+
+  --radius-xs: 6px;  --radius-sm: 8px;  --radius-md: 12px;
+  --radius-lg: 16px; --radius-xl: 22px; --radius-full: 999px;
+
+  --text-xs: 0.72rem; --text-sm: 0.82rem; --text-md: 0.9rem;
+  --text-lg: 1rem;    --text-xl: 1.2rem;  --text-2xl: 1.5rem;
+
+  /* z-index ladder: content < overlays < popovers < nav < modals */
+  --z-content: 1;
+  --z-overlay: 20;
+  --z-popover: 40;
+  --z-nav: 50;
+  --z-modal: 80;
+
+  /* Motion vocabulary */
+  --dur-fast: 0.12s;
+  --dur: 0.2s;
+  --dur-slow: 0.36s;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --nav-h: 56px;
+  --gap: 14px;
+
+  /* ============================================================
+   * ACCENT — overridable by a theme preset (body[data-theme]) or
+   * a custom accent picked in settings (inline --accent on body),
+   * or per-song album-art accent (inline on .song-page).
+   * `--accent-contrast` is the readable colour ON the accent fill;
+   * `--accent-text` is accent-coloured TEXT on the page background
+   * (light mode pushes it darker for contrast).
+   * ============================================================ */
   --accent: #ffd43b;
+  --accent-contrast: #1a1d24;
+  --accent-text: var(--accent);
+  --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
+  --accent-softer: color-mix(in srgb, var(--accent) 9%, transparent);
+  --accent-press: color-mix(in srgb, var(--accent) 86%, #000);
+  --accent-glow: color-mix(in srgb, var(--accent) 34%, transparent);
+
+  /* Semantic / instrument colours */
   --color-root: #ff6b6b;
   --color-root-dark: #c92a2a;
   --color-note: #4dabf7;
@@ -15,75 +55,178 @@
   --color-white-key: #f5f5f5;
   --color-black-key: #1a1a1a;
   --danger: #ff5252;
-  --gap: 14px;
-  --nav-h: 56px;
 
-  /* ===== Liquid-glass material tokens ===== */
-  /* Blur tuned so ambient gradient blobs stay readable (more "frosted glass"
-   * than "ground glass"); saturation pulls colour into the surface. */
+  /* Fretboard / SVG instrument tokens (so the SVGs tune per theme). */
+  --fretboard-nut: var(--text);
+  --fretboard-string: var(--text-dim);
+  --fretboard-fret: var(--text-dim);
+  --fretboard-note: var(--accent);
+  --capo-fill: color-mix(in srgb, var(--accent) 85%, transparent);
+
+  /* ============================================================
+   * COLOUR TOKENS — DARK mode (default). Light/OLED override below.
+   * CONTENT lives on opaque --surface tokens (never glass).
+   * ============================================================ */
+  --bg: #0f1115;
+  --bg-elev: #1a1d24;
+  --bg-elev-2: #232730;
+  --surface: #1b1f27;        /* primary opaque content surface */
+  --surface-2: #232833;      /* nested content surface / chips */
+  --surface-inset: #14171d;  /* wells, inputs, tab strips */
+  --surface-hover: #262b36;
+  --border: #2c3140;
+  --border-soft: rgba(255, 255, 255, 0.07);
+  --text: #e6e8ee;
+  --text-dim: #9aa0ad;
+  --text-faint: #6b7180;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.28), 0 6px 18px rgba(0, 0, 0, 0.26);
+  --shadow-2: 0 18px 50px rgba(0, 0, 0, 0.45), 0 4px 14px rgba(0, 0, 0, 0.22);
+
+  /* Ambient gradient-blob hues (space-separated RGB so alpha can vary).
+   * Theme presets recolour these. */
+  --blob-1: 140 100 255;
+  --blob-2: 255 140 70;
+  --blob-3: 60 200 240;
+  --blob-4: 255 90 200;
+  --blob-alpha: 0.5;
+
+  /* ============================================================
+   * LIQUID GLASS — material for the CHROME layer ONLY (floating
+   * nav, toolbars, transport, sheets, popovers). Never on content.
+   * Three blur tiers; fills are dark-tinted so the capsule holds
+   * its shape over vivid blobs. Driven entirely by these tokens.
+   * ============================================================ */
+  --glass-blur-pill: 16px;
+  --glass-blur-bar: 26px;
+  --glass-blur-sheet: 34px;
+  --glass-saturate: 180%;
+  --glass-brightness: 1.06;
+  --glass-fill: rgba(20, 22, 30, 0.62);
+  --glass-fill-strong: rgba(22, 24, 32, 0.82);
+  --glass-rim: rgba(255, 255, 255, 0.14);
+  --glass-rim-hi: rgba(255, 255, 255, 0.30);
+  --glass-rim-lo: rgba(0, 0, 0, 0.22);
+  --glass-sheen: rgba(255, 255, 255, 0.14);
+  --glass-hover: rgba(255, 255, 255, 0.08);
+  --glass-elevation: 0 18px 50px rgba(0, 0, 0, 0.45), 0 4px 14px rgba(0, 0, 0, 0.22);
+
+  /* ---- Legacy glass tokens (kept so .glass / .root-rail still resolve;
+   * new surfaces should use the tiered tokens above). ---- */
   --glass-blur: 22px;
-  --glass-saturate: 220%;
-  --glass-tint: rgba(255, 255, 255, 0.05);
-  --glass-tint-strong: rgba(255, 255, 255, 0.08);
-  --glass-tint-soft: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.18);
-  --glass-border-soft: rgba(255, 255, 255, 0.10);
-  --glass-highlight: rgba(255, 255, 255, 0.28);
-  --glass-lowlight: rgba(0, 0, 0, 0.20);
+  --glass-tint: var(--glass-fill);
+  --glass-tint-strong: var(--glass-fill-strong);
+  --glass-tint-soft: rgba(20, 22, 30, 0.5);
+  --glass-border: var(--glass-rim);
+  --glass-border-soft: var(--border-soft);
+  --glass-highlight: var(--glass-rim-hi);
+  --glass-lowlight: var(--glass-rim-lo);
   --glass-shadow: rgba(0, 0, 0, 0.45);
 }
 
 body.light {
-  --bg: #f0f3f9;
+  --bg: #eef1f7;
   --bg-elev: #ffffff;
   --bg-elev-2: #eef0f5;
-  --border: #d8dde6;
+  --surface: #ffffff;
+  --surface-2: #f3f5fa;
+  --surface-inset: #e9ecf3;
+  --surface-hover: #f1f3f9;
+  --border: #dde1ea;
+  --border-soft: rgba(20, 25, 40, 0.06);
   --text: #1a1d24;
   --text-dim: #5b6273;
+  --text-faint: #8a90a0;
   --color-white-key: #ffffff;
   --color-black-key: #222;
-  --glass-tint: rgba(255, 255, 255, 0.55);
-  --glass-tint-strong: rgba(255, 255, 255, 0.72);
-  --glass-tint-soft: rgba(255, 255, 255, 0.45);
-  --glass-border: rgba(255, 255, 255, 0.65);
-  --glass-border-soft: rgba(0, 0, 0, 0.04);
-  --glass-highlight: rgba(255, 255, 255, 0.95);
-  --glass-lowlight: rgba(0, 0, 0, 0.05);
+  /* Accent-coloured TEXT on a light background: darken the accent so it stays
+   * legible (derives from any preset / custom accent automatically). */
+  --accent-text: color-mix(in srgb, var(--accent) 58%, #000);
+  --accent-contrast: #1a1d24;
+  --shadow-1: 0 1px 2px rgba(20, 25, 40, 0.06), 0 6px 18px rgba(20, 25, 40, 0.06);
+  --shadow-2: 0 18px 44px rgba(20, 25, 40, 0.14), 0 4px 12px rgba(20, 25, 40, 0.08);
+  --blob-alpha: 0.32;
+
+  /* Floating glass over a light backdrop: light fill, soft rim. */
+  --glass-fill: rgba(255, 255, 255, 0.66);
+  --glass-fill-strong: rgba(255, 255, 255, 0.82);
+  --glass-rim: rgba(255, 255, 255, 0.85);
+  --glass-rim-hi: rgba(255, 255, 255, 0.95);
+  --glass-rim-lo: rgba(20, 25, 40, 0.05);
+  --glass-sheen: rgba(255, 255, 255, 0.7);
+  --glass-hover: rgba(20, 25, 40, 0.05);
+  --glass-elevation: 0 18px 44px rgba(20, 25, 40, 0.14), 0 4px 12px rgba(20, 25, 40, 0.08);
+  --glass-tint-soft: rgba(255, 255, 255, 0.5);
   --glass-shadow: rgba(20, 25, 40, 0.12);
 }
 
-/* ===== Glass utility ===== */
-/* Frosted material with backdrop blur, specular sheen at the top, soft
- * lowlight at the bottom, rim highlight, and an outer shadow. The radius
- * is intentionally NOT set — each consumer picks its own. */
-.glass {
-  background: var(--glass-tint);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  border: 1px solid var(--glass-border);
-  box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    inset 0 -1px 0 var(--glass-lowlight),
-    0 10px 30px var(--glass-shadow),
-    0 2px 6px var(--glass-shadow);
-  position: relative;
+/* OLED — a true-black variant of dark mode for AMOLED screens & stage use.
+ * Dark-mode rules still apply; we only deepen the background/surface tokens. */
+body.oled {
+  --bg: #000000;
+  --bg-elev: #0c0e12;
+  --bg-elev-2: #14171d;
+  --surface: #0c0e12;
+  --surface-2: #14171d;
+  --surface-inset: #060709;
+  --surface-hover: #181c23;
+  --border: #23272f;
+  --border-soft: rgba(255, 255, 255, 0.06);
+  --blob-alpha: 0.34;
+  --glass-fill: rgba(8, 9, 12, 0.7);
+  --glass-fill-strong: rgba(10, 11, 15, 0.88);
 }
-.glass-strong { background: var(--glass-tint-strong); }
-.glass-soft   { background: var(--glass-tint-soft); }
 
-/* Subtle top-half sheen — a 1-pixel gradient that lives just inside the
- * border, mimicking the refraction highlight along a glass edge. */
-.glass::after {
+/* ============================================================
+ * LIQUID GLASS utilities — for the CHROME layer ONLY (floating
+ * nav, toolbars, transport, sheets, popovers). Never on content.
+ *
+ * Two variants share one recipe:
+ *   .glass-bar   → regular translucency: nav, toolbars, transport, pills
+ *   .glass-sheet → stronger fill + deeper blur: popovers / sheets / dialogs
+ * Recipe = backdrop blur + saturate + brightness (vibrancy) + a layered
+ * box-shadow faking the curved-glass bevel (bright top rim, dark bottom
+ * rim) + outer elevation, plus a diagonal specular sheen via ::after.
+ * Radius is NOT set here — each consumer picks its own (usually a capsule).
+ * ============================================================ */
+.glass,
+.glass-bar,
+.glass-sheet {
+  position: relative;
+  isolation: isolate;
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(var(--glass-blur-bar)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  backdrop-filter: blur(var(--glass-blur-bar)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  border: 1px solid var(--glass-rim);
+  box-shadow:
+    inset 0 1px 0 var(--glass-rim-hi),
+    inset 0 -1px 0 var(--glass-rim-lo),
+    var(--glass-elevation);
+  color: var(--text);
+}
+.glass-sheet {
+  background: var(--glass-fill-strong);
+  -webkit-backdrop-filter: blur(var(--glass-blur-sheet)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  backdrop-filter: blur(var(--glass-blur-sheet)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+}
+
+/* Diagonal specular sheen — the refraction highlight along the top edge.
+ * Sits below content (z-index:-1 inside the element's own stacking context)
+ * so it brightens the material without washing out labels. */
+.glass::after,
+.glass-bar::after,
+.glass-sheet::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 45%);
   pointer-events: none;
+  background: linear-gradient(135deg, var(--glass-sheen) 0%, transparent 42%);
+  z-index: -1;
 }
-body.light .glass::after {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 45%);
-}
+
+/* Legacy aliases so any older consumer keeps its material. */
+.glass-strong { background: var(--glass-fill-strong); }
+.glass-soft   { background: var(--glass-tint-soft); }
 
 body.hide-root .root-legend { display: none; }
 
@@ -103,26 +246,24 @@ html, body {
  * auto), which traps wheel and keyboard scroll input. Ambient gradient
  * blobs sit directly on the body background with fixed attachment so
  * they don't scroll with the page. */
+/* Ambient gradient-blob backdrop. Hues come from --blob-1..4 (theme presets
+ * recolour them); --blob-alpha dims them per mode. Painted on body with
+ * fixed attachment so the floating glass chrome always has something vivid
+ * to refract while content scrolls past. */
 body {
   overflow-x: hidden;
   min-height: 100vh;
   background:
-    radial-gradient(38rem 28rem at  8% 12%, rgba(140, 100, 255, 0.55), transparent 60%),
-    radial-gradient(34rem 26rem at 92% 18%, rgba(255, 140, 70,  0.50), transparent 60%),
-    radial-gradient(48rem 36rem at 60% 95%, rgba(60, 200, 240,  0.55), transparent 65%),
-    radial-gradient(32rem 24rem at 30% 75%, rgba(255, 90, 200,  0.45), transparent 60%),
+    radial-gradient(38rem 28rem at  8% 12%, rgb(var(--blob-1) / var(--blob-alpha)), transparent 60%),
+    radial-gradient(34rem 26rem at 92% 18%, rgb(var(--blob-2) / var(--blob-alpha)), transparent 60%),
+    radial-gradient(48rem 36rem at 60% 95%, rgb(var(--blob-3) / var(--blob-alpha)), transparent 65%),
+    radial-gradient(32rem 24rem at 30% 75%, rgb(var(--blob-4) / calc(var(--blob-alpha) * 0.85)), transparent 60%),
     var(--bg);
   background-attachment: fixed;
+  transition: background-color var(--dur-slow) var(--ease-out);
 }
-body.light {
-  background:
-    radial-gradient(38rem 28rem at  8% 12%, rgba(140, 100, 255, 0.45), transparent 60%),
-    radial-gradient(34rem 26rem at 92% 18%, rgba(255, 140, 70,  0.35), transparent 60%),
-    radial-gradient(48rem 36rem at 60% 95%, rgba(60, 200, 240,  0.40), transparent 65%),
-    radial-gradient(32rem 24rem at 30% 75%, rgba(255, 110, 200, 0.35), transparent 60%),
-    var(--bg);
-  background-attachment: fixed;
-}
+/* Stage Mode kills the blobs for a calm, high-contrast performance backdrop. */
+body.stage-mode { background: #000 !important; }
 
 /* Whole-app lock when the song page is mounted: outer body/html never scroll,
  * the song-page itself handles internal scroll. Other pages keep their
@@ -148,28 +289,32 @@ body.song-page-active {
 .glass-capsule,
 .glass-pill {
   position: fixed;
-  z-index: 50;
-  /* Modern liquid-glass: opaque enough to hold its shape against vibrant
-   * ambient blobs (without the 0.55 it visually faded into pink/orange
-   * gradient blooms). No glossy top sheen — blur + rim do the talking. */
-  background: rgba(20, 22, 30, 0.72);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  z-index: var(--z-nav);
+  isolation: isolate;
+  /* Canonical liquid-glass chrome: fill opaque enough to hold its shape over
+   * the vivid ambient blobs, deep blur for the frosted read, token rim +
+   * elevation, and a diagonal specular sheen (::after below). */
+  background: var(--glass-fill-strong);
+  -webkit-backdrop-filter: blur(30px) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  backdrop-filter: blur(30px) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  border: 1px solid var(--glass-rim);
   box-shadow:
-    0 18px 50px rgba(0, 0, 0, 0.45),
-    0 4px 14px rgba(0, 0, 0, 0.22);
-  border-radius: 999px;
+    inset 0 1px 0 var(--glass-rim-hi),
+    inset 0 -1px 0 var(--glass-rim-lo),
+    var(--glass-elevation);
+  border-radius: var(--radius-full);
   color: var(--text);
-  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s;
+  transition: transform var(--dur-slow) var(--ease-spring), opacity var(--dur);
 }
-body.light .glass-capsule,
-body.light .glass-pill {
-  background: rgba(255, 255, 255, 0.78);
-  border-color: rgba(255, 255, 255, 0.6);
-  box-shadow:
-    0 18px 44px rgba(20, 25, 40, 0.14),
-    0 4px 12px rgba(20, 25, 40, 0.08);
+.glass-capsule::after,
+.glass-pill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(135deg, var(--glass-sheen) 0%, transparent 46%);
+  z-index: -1;
 }
 
 /* ========== Floating nav capsule ========== */
@@ -246,12 +391,12 @@ body.light .nav-tab { color: rgba(20, 25, 40, 0.82); }
 }
 body.light .nav-tab:hover { color: var(--text); background: rgba(20, 25, 40, 0.06); }
 .nav-tab.active {
-  color: #1a1d24;
+  color: var(--accent-contrast);
   background: var(--accent);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.5) inset,
     0 -1px 0 rgba(0, 0, 0, 0.1) inset,
-    0 2px 6px rgba(255, 212, 59, 0.35);
+    0 2px 6px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 .nav-tab-icon {
   display: inline-flex;
@@ -328,9 +473,9 @@ body.light .view-toolbar .tb-segment { background: rgba(20, 25, 40, 0.05); }
 .view-toolbar .tb-seg-btn:hover { color: var(--text); border-color: transparent; }
 .view-toolbar .tb-seg-btn.active {
   background: var(--accent);
-  color: #1a1d24;
+  color: var(--accent-contrast);
 }
-.view-toolbar .tb-seg-btn.active:hover { color: #1a1d24; }
+.view-toolbar .tb-seg-btn.active:hover { color: var(--accent-contrast); }
 
 /* Compact / Hide-root pills */
 .view-toolbar .tb-pill {
@@ -352,11 +497,11 @@ body.light .view-toolbar .tb-segment { background: rgba(20, 25, 40, 0.05); }
 .view-toolbar .tb-pill:hover { color: var(--text); background: rgba(255, 255, 255, 0.05); border-color: transparent; }
 body.light .view-toolbar .tb-pill:hover { background: rgba(20, 25, 40, 0.05); }
 .view-toolbar .tb-pill[data-active="true"] {
-  background: rgba(255, 212, 59, 0.15);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
   color: var(--accent);
 }
 body.light .view-toolbar .tb-pill[data-active="true"] { background: rgba(180, 130, 0, 0.12); color: #a87800; }
-.view-toolbar .tb-pill[data-active="true"]:hover { background: rgba(255, 212, 59, 0.22); }
+.view-toolbar .tb-pill[data-active="true"]:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
 
 /* Theme icon (no label) */
 .view-toolbar .tb-icon-only {
@@ -473,14 +618,17 @@ aside.root-rail {
   max-height: calc(100vh - 160px);
   overflow-y: auto;
   scrollbar-width: none;
-  /* Glass material inlined (Tailwind v4 layers .glass too low to win). */
-  background: var(--glass-tint);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  border: 1px solid var(--glass-border-soft);
+  /* Glass chrome (Tailwind v4 layers .glass-bar too low to win, so inline the
+   * recipe straight off the canonical tokens). */
+  isolation: isolate;
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(var(--glass-blur-bar)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  backdrop-filter: blur(var(--glass-blur-bar)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  border: 1px solid var(--glass-rim);
   box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    0 8px 24px var(--glass-shadow);
+    inset 0 1px 0 var(--glass-rim-hi),
+    inset 0 -1px 0 var(--glass-rim-lo),
+    var(--glass-elevation);
 }
 .root-rail::-webkit-scrollbar { display: none; }
 
@@ -507,10 +655,10 @@ aside.root-rail {
 body.light .rail-key:hover { background: rgba(20, 25, 40, 0.06); }
 .rail-key.active {
   background: var(--accent);
-  color: #1a1d24;
-  box-shadow: 0 2px 8px rgba(255, 212, 59, 0.25);
+  color: var(--accent-contrast);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 25%, transparent);
 }
-.rail-key.active:hover { color: #1a1d24; }
+.rail-key.active:hover { color: var(--accent-contrast); }
 .rail-key-list { font-size: 1.1rem; }
 
 .rail-divider {
@@ -873,7 +1021,7 @@ body.mode-compact .card.guitar-chord-card .card-guitar-empty { min-height: 80px;
   font-size: 0.92rem;
 }
 body.light .settings-hero-text h1 {
-  background: linear-gradient(135deg, var(--text) 40%, #b58400);
+  background: linear-gradient(135deg, var(--text) 40%, var(--accent-text));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -902,9 +1050,9 @@ body.light .settings-hero-text h1 {
 .preview-btn:active { transform: scale(0.97); }
 .preview-btn.primary {
   background: var(--accent);
-  color: #1a1d24;
+  color: var(--accent-contrast);
   border-color: var(--accent);
-  box-shadow: 0 4px 14px rgba(255, 212, 59, 0.25);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 .preview-btn.primary:hover { filter: brightness(1.06); }
 .preview-btn svg { width: 14px; height: 14px; flex: 0 0 auto; }
@@ -983,7 +1131,7 @@ body.light .settings-group {
   text-align: center;
   letter-spacing: 0.2px;
 }
-body.light .setting-value { color: #8a5a00; }
+body.light .setting-value { color: var(--accent-text); }
 .setting-hint {
   font-size: 0.78rem;
   color: var(--text-dim);
@@ -1016,7 +1164,7 @@ body.light .setting-value { color: #8a5a00; }
   border-radius: 50%;
   background: var(--bg-elev);
   border: 2px solid var(--accent);
-  box-shadow: 0 2px 10px rgba(255, 212, 59, 0.35);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 35%, transparent);
   cursor: grab;
   transition: transform 0.1s;
 }
@@ -1030,7 +1178,7 @@ body.light .setting-value { color: #8a5a00; }
   border-radius: 50%;
   background: var(--bg-elev);
   border: 2px solid var(--accent);
-  box-shadow: 0 2px 10px rgba(255, 212, 59, 0.35);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 35%, transparent);
   cursor: grab;
 }
 .setting input[type="range"]:focus-visible {
@@ -1096,7 +1244,7 @@ body.light .setting-value { color: #8a5a00; }
 .settings-segmented button:hover { color: var(--text); }
 .settings-segmented button.active {
   background: var(--accent);
-  color: #1a1d24;
+  color: var(--accent-contrast);
 }
 
 .settings-chord-preview {
@@ -1258,9 +1406,9 @@ body.light .nav-preview-capsule {
 .playground-segment button:hover { color: var(--text); border-color: transparent; }
 .playground-segment button.active {
   background: var(--accent);
-  color: #1a1d24;
+  color: var(--accent-contrast);
 }
-.playground-segment button.active:hover { color: #1a1d24; }
+.playground-segment button.active:hover { color: var(--accent-contrast); }
 .labels-toggle {
   display: inline-flex;
   align-items: center;
@@ -1301,7 +1449,7 @@ body.light .nav-preview-capsule {
 .play-overlay-btn {
   align-self: flex-end;
   background: var(--accent);
-  color: #1a1d24;
+  color: var(--accent-contrast);
   border: none;
   border-radius: 999px;
   padding: 10px 18px;
@@ -1362,7 +1510,7 @@ body.light .nav-preview-capsule {
 .fretboard .fb-note-label {
   font-size: 9px;
   font-weight: 800;
-  fill: #1a1d24;
+  fill: var(--accent-contrast);
   font-family: var(--font-geist-sans), sans-serif;
 }
 .fretboard .fb-faint-label {
@@ -1372,9 +1520,9 @@ body.light .nav-preview-capsule {
   opacity: 0.55;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
 }
-.fretboard .fb-hit:hover { fill: rgba(255, 212, 59, 0.12); }
+.fretboard .fb-hit:hover { fill: color-mix(in srgb, var(--accent) 12%, transparent); }
 .fretboard .fb-capo {
-  fill: rgba(255, 212, 59, 0.85);
+  fill: color-mix(in srgb, var(--accent) 85%, transparent);
   stroke: var(--accent);
   stroke-width: 1.5;
   cursor: grab;
@@ -1405,7 +1553,7 @@ body.light .nav-preview-capsule {
 }
 .capo-controls button.active {
   background: var(--accent);
-  color: #1a1d24;
+  color: var(--accent-contrast);
   border-color: var(--accent);
 }
 .capo-controls .capo-hint {
@@ -1483,7 +1631,7 @@ body.light .nav-preview-capsule {
 
 .btn-primary {
   background: var(--accent);
-  color: #1a1d24;
+  color: var(--accent-contrast);
   border: 1px solid var(--accent);
   padding: 9px 16px;
   border-radius: 999px;
@@ -1607,7 +1755,7 @@ body.light .nav-preview-capsule {
   color: var(--accent);
   border: 1px solid var(--border);
 }
-body.light .chip { color: #8a5a00; }
+body.light .chip { color: var(--accent-text); }
 
 /* ========== Import dialog ========== */
 
@@ -1772,7 +1920,7 @@ body.light .chip { color: #8a5a00; }
 .drop-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(255, 212, 59, 0.1);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1840,13 +1988,13 @@ body:has(.song-page)::before {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(800px 400px at 90% -10%, rgba(255, 212, 59, 0.08), transparent 60%),
+    radial-gradient(800px 400px at 90% -10%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 60%),
     radial-gradient(700px 380px at 5% 30%, rgba(77, 171, 247, 0.06), transparent 65%);
   z-index: -1;
 }
 body.light:has(.song-page)::before {
   background:
-    radial-gradient(800px 400px at 90% -10%, rgba(255, 192, 0, 0.10), transparent 60%),
+    radial-gradient(800px 400px at 90% -10%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%),
     radial-gradient(700px 380px at 5% 30%, rgba(25, 113, 194, 0.06), transparent 65%);
 }
 /* Palette is no longer a grid column on song-page — see the `.song-rail`
@@ -1904,7 +2052,7 @@ body.light:has(.song-page)::before {
   color: transparent;
 }
 body.light .song-meta-titles h1 {
-  background: linear-gradient(135deg, var(--text) 50%, #b58400);
+  background: linear-gradient(135deg, var(--text) 50%, var(--accent-text));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -1959,12 +2107,12 @@ body.light .song-meta-titles h1 {
 .roadmap-shortcut svg { width: 20px; height: 20px; }
 .roadmap-shortcut:hover {
   background: var(--accent);
-  color: #1a1d24;
+  color: var(--accent-contrast);
   border-color: var(--accent);
 }
 .roadmap-shortcut[aria-pressed="true"] {
   background: var(--accent);
-  color: #1a1d24;
+  color: var(--accent-contrast);
   border-color: var(--accent);
 }
 @media (max-width: 700px) {
@@ -2013,14 +2161,14 @@ body.light .song-meta-titles h1 {
   outline: none;
   transition: border-color 0.15s, background 0.15s;
 }
-body.light .key-picker-select { color: #8a5a00; }
+body.light .key-picker-select { color: var(--accent-text); }
 .key-picker-select:hover {
   border-color: var(--accent);
   background: var(--bg-elev);
 }
 .key-picker-select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(255, 212, 59, 0.18);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 .key-picker-chevron {
   position: absolute;
@@ -2030,7 +2178,7 @@ body.light .key-picker-select { color: #8a5a00; }
   font-size: 0.85rem;
   font-weight: 800;
 }
-body.light .key-picker-chevron { color: #8a5a00; }
+body.light .key-picker-chevron { color: var(--accent-text); }
 .key-picker-select option { background: var(--bg-elev); color: var(--text); }
 
 /* Effective-key chip in the song info row. Looks like a regular chip but
@@ -2040,7 +2188,7 @@ body.light .key-picker-chevron { color: #8a5a00; }
   border-color: var(--accent);
   color: var(--accent);
 }
-body.light .key-chip-info.transposed { color: #8a5a00; }
+body.light .key-chip-info.transposed { color: var(--accent-text); }
 
 /* Preset selector (Auto / 2 / 3) below the layout toggle. */
 .preset-row {
@@ -2076,7 +2224,7 @@ body.light .key-chip-info.transposed { color: #8a5a00; }
 .preset-btn:hover { color: var(--text); }
 .preset-btn.active {
   background: var(--accent);
-  color: #1a1d24;
+  color: var(--accent-contrast);
 }
 
 /* Song body rendering */
@@ -2193,16 +2341,16 @@ body.light .key-chip-info.transposed { color: #8a5a00; }
 .action-cog svg { width: 20px; height: 20px; stroke-width: 2.2; }
 .action-cog:hover {
   background: var(--accent);
-  color: #1a1d24;
+  color: var(--accent-contrast);
   border-color: var(--accent);
-  box-shadow: 0 4px 12px rgba(255, 212, 59, 0.3);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 .action-cog.open {
   background: var(--accent);
-  color: #1a1d24;
+  color: var(--accent-contrast);
   border-color: var(--accent);
   transform: rotate(60deg);
-  box-shadow: 0 4px 14px rgba(255, 212, 59, 0.35);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .settings-popover {
@@ -2273,7 +2421,7 @@ body.light .settings-popover { box-shadow: 0 12px 28px rgba(20, 25, 40, 0.12); }
 .section-tray.empty { color: var(--text-dim); }
 .section-tray.hover {
   border-color: var(--accent);
-  background: rgba(255, 212, 59, 0.04);
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
 }
 .tray-label {
   font-size: 0.66rem;
@@ -2348,7 +2496,7 @@ body.light .settings-popover { box-shadow: 0 12px 28px rgba(20, 25, 40, 0.12); }
   border-color: var(--accent);
 }
 .popover-toggle.on .popover-toggle-thumb {
-  background: #1a1d24;
+  background: var(--accent-contrast);
   transform: translateX(14px);
 }
 
@@ -2460,12 +2608,12 @@ body.light .roadmap-panel { box-shadow: 0 10px 28px rgba(20, 25, 40, 0.12); }
   font-size: 0.72rem;
   font-weight: 800;
   color: var(--accent);
-  background: rgba(255, 212, 59, 0.12);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
   padding: 2px 6px;
   border-radius: 999px;
   flex-shrink: 0;
 }
-body.light .roadmap-block-count { color: #8a5a00; background: rgba(255, 192, 0, 0.18); }
+body.light .roadmap-block-count { color: var(--accent-text); background: var(--accent-soft); }
 .roadmap-row-action {
   background: transparent;
   border: 1px solid transparent;
@@ -2487,7 +2635,7 @@ body.light .roadmap-block-count { color: #8a5a00; background: rgba(255, 192, 0, 
 .roadmap-row-note { padding-left: 16px; }
 .roadmap-note {
   flex: 1;
-  background: rgba(255, 212, 59, 0.06);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
   border: 1px dashed var(--border);
   border-radius: 6px;
   padding: 6px 10px;
@@ -2578,8 +2726,8 @@ body.light .roadmap-block-count { color: #8a5a00; background: rgba(255, 192, 0, 
   animation: section-flash 0.8s ease-out;
 }
 @keyframes section-flash {
-  0% { box-shadow: 0 0 0 4px rgba(255, 212, 59, 0.6); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 212, 59, 0); }
+  0% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 60%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent); }
 }
 
 /* Layout-expanded sizing now lives next to the base `.song-page` rule above
@@ -2599,7 +2747,7 @@ body.light .roadmap-block-count { color: #8a5a00; background: rgba(255, 192, 0, 
 }
 .empty-canvas.hover {
   border-color: var(--accent);
-  background: rgba(255, 212, 59, 0.06);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
   color: var(--text);
 }
 
@@ -2679,8 +2827,8 @@ body.light .roadmap-block-count { color: #8a5a00; background: rgba(255, 192, 0, 
 .layout-btn:hover { color: var(--text); }
 .layout-btn.active {
   background: var(--accent);
-  color: #1a1d24;
-  box-shadow: 0 2px 6px rgba(255, 212, 59, 0.25);
+  color: var(--accent-contrast);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 .song-section {
@@ -2695,7 +2843,7 @@ body.light .song-section { box-shadow: 0 1px 3px rgba(20, 25, 40, 0.04); }
 
 .section-chorus {
   border-left: 3px solid var(--accent);
-  background: linear-gradient(180deg, rgba(255, 212, 59, 0.05), transparent 140%), var(--bg-elev);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 5%, transparent), transparent 140%), var(--bg-elev);
 }
 .section-bridge {
   border-left: 3px solid var(--color-note);
@@ -2717,7 +2865,7 @@ body.light .song-section { box-shadow: 0 1px 3px rgba(20, 25, 40, 0.04); }
 }
 .section-chorus .song-section-name {
   background: var(--accent);
-  color: #1a1d24;
+  color: var(--accent-contrast);
   border-color: var(--accent);
 }
 .section-bridge .song-section-name {
@@ -2804,17 +2952,17 @@ body.light .song-line-tab {
   position: relative;
   white-space: nowrap;
 }
-body.light .chunk-chord { color: #8a5a00; }
+body.light .chunk-chord { color: var(--accent-text); }
 .chunk-chord:hover {
-  background: linear-gradient(180deg, rgba(255, 212, 59, 0.22), rgba(255, 212, 59, 0.08));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 22%, transparent), color-mix(in srgb, var(--accent) 8%, transparent));
   transform: translateY(-1px);
 }
 .chunk-chord:active {
   transform: translateY(0);
-  background: rgba(255, 212, 59, 0.32);
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
 }
 body.light .chunk-chord:hover {
-  background: linear-gradient(180deg, rgba(255, 192, 0, 0.32), rgba(255, 192, 0, 0.12));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 32%, transparent), color-mix(in srgb, var(--accent) 12%, transparent));
 }
 .chunk-text {
   font-family: var(--font-geist-sans), -apple-system, sans-serif;
@@ -2849,7 +2997,7 @@ body.light .chunk-chord:hover {
   opacity: 0.7;
 }
 body.light .chord-slash,
-body.light .chord-paren { color: #8a5a00; }
+body.light .chord-paren { color: var(--accent-text); }
 
 /* ========== Chord palette ========== */
 
@@ -2985,7 +3133,7 @@ body.light .chord-paren { color: #8a5a00; }
   height: 6px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 0 3px rgba(255, 212, 59, 0.18);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 .palette-empty {
   font-size: 0.85rem;
@@ -3078,7 +3226,7 @@ body.light .palette-card:hover { box-shadow: 0 6px 20px rgba(20, 25, 40, 0.08); 
 .chord-diagram .cd-finger {
   font-size: 7px;
   font-weight: 800;
-  fill: #1a1d24;
+  fill: var(--accent-contrast);
   font-family: var(--font-geist-sans), sans-serif;
   pointer-events: none;
 }
@@ -3551,62 +3699,132 @@ body.light .palette-card:hover { box-shadow: 0 6px 20px rgba(20, 25, 40, 0.08); 
 }
 
 /* ============================================================
- * Liquid-glass surface migration
+ * CONTENT LAYER — opaque & legible (the iOS-26 two-layer rule).
  *
- * Override the legacy solid backgrounds with the frosted material so the
- * redesign reads system-wide. Selectors are grouped by visual weight:
- *   - LIGHT panels: floating cards, palette tiles, individual chord cards
- *   - MEDIUM panels: large groups (settings sections, song body sections,
- *     playground board, chord palette aside)
- *   - PILL controls: segmented switches & toggles
+ * Glass belongs ONLY on the floating chrome (nav, toolbars,
+ * transport, sheets, popovers). Content surfaces — cards, song
+ * sections, lists, the palette, the playground board, settings
+ * groups — stay OPAQUE on an elevated surface so text and chord
+ * diagrams are always crisp. This replaces an earlier pass that
+ * forced backdrop-blur onto these via !important.
  * ============================================================ */
-
-.app-header,
-.toolbar,
-.legend,
 .card,
 .palette-card,
-.song-section {
-  background: var(--glass-tint) !important;
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  border: 1px solid var(--glass-border-soft) !important;
-  box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    0 8px 24px var(--glass-shadow) !important;
-}
-
+.song-section,
 .settings-group,
 .chord-palette,
 .playground-board,
-.spotify-panel {
-  background: var(--glass-tint-strong) !important;
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  border: 1px solid var(--glass-border) !important;
-  box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    0 12px 36px var(--glass-shadow) !important;
-}
-
-/* Segmented control pills — same material, smaller scale. */
+.spotify-panel,
+.legend,
+.meta-editor,
 .settings-segmented,
 .playground-segment,
 .instrument-toggle,
-.capo-controls > button,
 .capo-controls,
 .tabs {
-  background: var(--glass-tint-soft);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid var(--glass-border-soft);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
-/* Default page buttons — softer glass on hover so they pick up the effect
- * without feeling like every button is a panel. */
-button:not(.nav-tab):not(.glass-pill):not(.theme-fab):not(.toggle) {
-  background: var(--glass-tint-soft);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border-color: var(--glass-border-soft);
+/* Reusable opaque content surface (new components use this). */
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+.surface-2 { background: var(--surface-2); }
+
+/* Solid chip — for labels/values that sit INSIDE glass chrome, so contrast
+ * is measured against the chip, never the live blur behind it. */
+.glass-chip {
+  background: var(--surface-2);
+  border-radius: var(--radius-full);
+  color: var(--text);
+}
+
+/* ============================================================
+ * MOTION — springy press, fades, shimmer. Gated by
+ * prefers-reduced-motion in the accessibility block below.
+ * ============================================================ */
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slide-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes pop-in { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes shimmer { 0% { background-position: -150% 0; } 100% { background-position: 250% 0; } }
+
+.press-spring { transition: transform var(--dur) var(--ease-spring); }
+.press-spring:active { transform: scale(0.96); }
+.anim-pop { animation: pop-in var(--dur) var(--ease-spring); }
+.anim-slide-up { animation: slide-up var(--dur-slow) var(--ease-out); }
+
+/* ============================================================
+ * FOCUS — a visible ring on every interactive element so the
+ * app is fully keyboard-navigable (iOS-faithful + accessible).
+ * ============================================================ */
+:where(a, button, input, select, textarea, [role="button"], [role="switch"], [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+ * THEME PRESETS — set the accent + ambient blob hues. Base mode
+ * (dark / light / oled) controls luminance; the preset controls
+ * colour. A custom accent (inline --accent on <body>) overrides
+ * the preset; clearing it falls back to these.
+ * ============================================================ */
+body[data-theme="amber"]   { --accent: #ffd43b; --accent-contrast: #1a1d24; --blob-1: 140 100 255; --blob-2: 255 140 70;  --blob-3: 60 200 240;  --blob-4: 255 90 200; }
+body[data-theme="indigo"]  { --accent: #8c8cff; --accent-contrast: #0b0c14; --blob-1: 120 90 255;  --blob-2: 90 140 255;  --blob-3: 60 220 220;  --blob-4: 180 120 255; }
+body[data-theme="sunset"]  { --accent: #ff9a5a; --accent-contrast: #1a1106; --blob-1: 255 120 80;  --blob-2: 255 80 140;  --blob-3: 255 184 64;  --blob-4: 210 70 170; }
+body[data-theme="emerald"] { --accent: #34d6a0; --accent-contrast: #04140e; --blob-1: 40 210 160;  --blob-2: 70 200 255;  --blob-3: 180 230 90;  --blob-4: 60 180 200; }
+body[data-theme="rose"]    { --accent: #ff7a9c; --accent-contrast: #1a0810; --blob-1: 255 110 160; --blob-2: 180 90 255;  --blob-3: 255 150 90;  --blob-4: 230 80 200; }
+body[data-theme="mono"]    { --accent: #cfd4e0; --accent-contrast: #14171d; --blob-1: 130 140 160; --blob-2: 100 110 130; --blob-3: 150 160 180; --blob-4: 110 120 140; --blob-alpha: 0.28; }
+body[data-theme="cyber"]   { --accent: #2ee6d6; --accent-contrast: #04140f; --blob-1: 40 230 214;  --blob-2: 255 60 180;  --blob-3: 90 120 255;  --blob-4: 180 60 240; }
+
+/* ============================================================
+ * STAGE MODE — the deliberate inverse of the glass aesthetic:
+ * opaque near-black, oversized text, chrome hidden. Also
+ * satisfies Reduce-Transparency. (Full reader UI built in WS3.)
+ * ============================================================ */
+body.stage-mode .app-nav,
+body.stage-mode .view-toolbar { display: none !important; }
+
+/* ============================================================
+ * ACCESSIBILITY — honour system preferences + a manual toggle.
+ *  • reduced transparency / .reduce-glass → opaque chrome, no blur
+ *  • reduced motion → no springs/parallax/shimmer, plain fades
+ *  • increased contrast → stronger borders + text
+ * ============================================================ */
+@media (prefers-reduced-transparency: reduce) {
+  .glass, .glass-bar, .glass-sheet,
+  .glass-capsule, .glass-pill {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+  }
+}
+body.reduce-glass .glass,
+body.reduce-glass .glass-bar,
+body.reduce-glass .glass-sheet,
+body.reduce-glass .glass-capsule,
+body.reduce-glass .glass-pill {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root { --border: #4a5163; --text-dim: #b9bfcc; }
+  body.light { --border: #b9bfcc; --text-dim: #3c4252; }
+  .glass, .glass-bar, .glass-sheet { border-width: 1.5px; }
 }
