@@ -14,7 +14,10 @@ export function SetlistsIndex() {
 
   useEffect(() => { rehydrateSetlists().then(() => setHydrated(true)); }, []);
 
-  const create = () => {
+  const create = async () => {
+    /* Ensure the store is hydrated first, so creating doesn't write into an
+     * empty map that a late rehydrate would then overwrite. */
+    await rehydrateSetlists();
     const s = setlistsRepo.create(name);
     setName('');
     setCreating(false);

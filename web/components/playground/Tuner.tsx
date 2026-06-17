@@ -21,8 +21,10 @@ function useTuner() {
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef(0);
   const lastRef = useRef({ note: '', cents: 999 });
+  const cancelledRef = useRef(false);
 
   const stop = useCallback(() => {
+    cancelledRef.current = true; // abort any in-flight start() past its await
     cancelAnimationFrame(rafRef.current);
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
@@ -32,10 +34,14 @@ function useTuner() {
   }, []);
 
   const start = useCallback(async () => {
+    cancelledRef.current = false;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
       });
+      /* If we were stopped/unmounted while the permission prompt was open,
+       * tear down the now-resolved stream instead of leaking it. */
+      if (cancelledRef.current) { stream.getTracks().forEach((t) => t.stop()); return; }
       streamRef.current = stream;
       type W = Window & { webkitAudioContext?: typeof AudioContext };
       const Ctor = window.AudioContext || (window as W).webkitAudioContext;
@@ -48,10 +54,12 @@ function useTuner() {
       const buf = new Float32Array(analyser.fftSize);
       setState((s) => ({ ...s, listening: true, error: null }));
 
+      let silent = 0;
       const loop = () => {
         analyser.getFloatTimeDomainData(buf);
         const freq = autoCorrelate(buf, ctx.sampleRate);
         if (freq > 0) {
+          silent = 0;
           const n = freqToNote(freq);
           const label = `${n.name}${n.octave}`;
           /* Only re-render when the displayed value actually changes. */
@@ -59,6 +67,10 @@ function useTuner() {
             lastRef.current = { note: label, cents: n.cents };
             setState((s) => ({ ...s, freq, note: label, noteName: n.name, cents: n.cents, midi: n.midi }));
           }
+        } else if (++silent > 45 && lastRef.current.note !== '') {
+          /* No clear pitch for ~0.7s → clear the readout instead of freezing. */
+          lastRef.current = { note: '', cents: 999 };
+          setState((s) => ({ ...s, note: null, noteName: null, midi: null }));
         }
         rafRef.current = requestAnimationFrame(loop);
       };

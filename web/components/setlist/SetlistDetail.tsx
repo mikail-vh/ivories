@@ -45,6 +45,7 @@ export function SetlistDetail({ id }: { id: string }) {
             className="setlist-title-input"
             value={setlist.name}
             onChange={(e) => setlistsRepo.save({ ...setlist, name: e.target.value })}
+            onBlur={(e) => { if (!e.target.value.trim()) setlistsRepo.save({ ...setlist, name: 'Untitled set' }); }}
             aria-label="Setlist name"
           />
           <p>{setSongs.length} song{setSongs.length === 1 ? '' : 's'}</p>

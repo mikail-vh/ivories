@@ -2369,11 +2369,12 @@ body.light .chip { color: var(--accent-text); }
 .setlist-row-link { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: var(--text); padding: 4px 0; }
 .setlist-row-actions { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
 .setlist-move, .setlist-remove {
-  width: 38px; height: 38px;
+  width: 40px; height: 40px;
   border-radius: var(--radius-sm);
   border: none; background: transparent;
   color: var(--text-dim); cursor: pointer; font-size: 1rem;
 }
+@media (pointer: coarse) { .setlist-move, .setlist-remove { width: 44px; height: 44px; } }
 .setlist-move:hover, .setlist-remove:hover { background: var(--surface-2); color: var(--text); }
 .setlist-move:disabled { opacity: 0.3; cursor: default; }
 .setlist-move:disabled:hover { background: transparent; }
