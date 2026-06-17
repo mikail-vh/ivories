@@ -41,6 +41,14 @@ export default function PlaygroundApp() {
     : mode === 'scale' ? scaleRoot
     : -1;
 
+  /* Improv helper: scales rooted at the chord's root that contain every chord
+   * tone — i.e. safe scales to solo over the selected chord. */
+  const chordPcs = mode === 'chord' ? pitchClassesFor(chordRoot, CHORDS[chordIdx]?.intervals ?? []) : [];
+  const fittingScales = mode === 'chord'
+    ? SCALES.map((s, i) => ({ s, i, pcs: pitchClassesFor(chordRoot, s.intervals) }))
+        .filter(({ pcs }) => chordPcs.every((pc) => pcs.includes(pc)))
+    : [];
+
   /* Capo shifts the *sounding* pitch up — the visual chord shape stays the
    * same on the fretboard but plays N semitones higher. */
   const playChordOverlay = () => {
@@ -90,6 +98,25 @@ export default function PlaygroundApp() {
           <button type="button" className="play-overlay-btn" onClick={playChordOverlay}>
             ▶ Play {NOTE_NAMES_SHARP[chordRoot]}{CHORDS[chordIdx]?.suffix}
           </button>
+        </div>
+      )}
+
+      {mode === 'chord' && fittingScales.length > 0 && (
+        <div className="playground-suggest">
+          <span className="playground-suggest-label">Solo with</span>
+          <div className="playground-suggest-chips">
+            {fittingScales.map(({ s, i }) => (
+              <button
+                key={i}
+                type="button"
+                className="suggest-chip"
+                title={`Show ${NOTE_NAMES_SHARP[chordRoot]} ${s.label} on the board`}
+                onClick={() => { setScaleRoot(chordRoot); setScaleIdx(i); setMode('scale'); }}
+              >
+                {NOTE_NAMES_SHARP[chordRoot]} {s.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

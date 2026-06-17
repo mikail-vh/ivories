@@ -1683,6 +1683,36 @@ body.light .nav-preview-capsule {
   cursor: pointer;
 }
 
+/* Playground: "solo with these scales" improv suggestions */
+.playground-suggest {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin: -2px 0 2px;
+}
+.playground-suggest-label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+.playground-suggest-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.suggest-chip {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--dur-fast), color var(--dur-fast);
+}
+.suggest-chip:hover { border-color: var(--accent); color: var(--accent-text); }
+
 .playground-board {
   background: var(--bg-elev);
   border: 1px solid var(--border);
