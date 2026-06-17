@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Piano } from '../Piano';
 import { Fretboard } from './Fretboard';
+import { Tuner } from './Tuner';
 import { useAppStore } from '@/lib/store';
 import {
   CHORDS, SCALES, NOTE_NAMES_DISPLAY, NOTE_NAMES_SHARP, ROOTS,
@@ -10,7 +11,7 @@ import {
 } from '@/lib/music';
 import { playNote, playChord, playGuitarChord } from '@/lib/audio';
 
-type Mode = 'free' | 'chord' | 'scale';
+type Mode = 'free' | 'chord' | 'scale' | 'tuner';
 
 export default function PlaygroundApp() {
   const chordView = useAppStore(s => s.chordView);
@@ -81,6 +82,7 @@ export default function PlaygroundApp() {
               { value: 'free' as Mode, label: 'Free play' },
               { value: 'chord' as Mode, label: 'Chord' },
               { value: 'scale' as Mode, label: 'Scale' },
+              { value: 'tuner' as Mode, label: 'Tuner' },
             ]}
             onChange={(v) => setMode(v)}
           />
@@ -127,6 +129,11 @@ export default function PlaygroundApp() {
         </div>
       )}
 
+      {mode === 'tuner' ? (
+        <section className="playground-board tuner-board">
+          <Tuner />
+        </section>
+      ) : (
       <section className="playground-board">
         {chordView === 'guitar' ? (
           <>
@@ -170,6 +177,7 @@ export default function PlaygroundApp() {
           />
         )}
       </section>
+      )}
     </main>
   );
 }

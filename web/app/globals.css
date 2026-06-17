@@ -1724,6 +1724,28 @@ body.light .nav-preview-capsule {
   overflow-x: auto;
 }
 
+/* ===== Tuner ===== */
+.tuner-board { align-items: center; }
+.tuner { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); width: 100%; max-width: 420px; margin: 0 auto; padding: var(--space-4) 0; }
+.tuner-readout { display: flex; align-items: baseline; gap: 4px; min-height: 64px; }
+.tuner-note { font-size: 4rem; font-weight: 800; letter-spacing: -2px; line-height: 1; color: var(--text-dim); transition: color var(--dur); }
+.tuner-readout.off .tuner-note { color: var(--text); }
+.tuner-readout.in-tune .tuner-note { color: #34d6a0; }
+.tuner-oct { font-size: 1.4rem; font-weight: 700; color: var(--text-dim); font-family: var(--font-geist-mono), ui-monospace, monospace; }
+.tuner-meter { width: 100%; }
+.tuner-meter-track { position: relative; height: 14px; border-radius: 999px; background: var(--surface-2); }
+.tuner-meter-center { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; background: var(--border); transform: translateX(-50%); }
+.tuner-needle { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); transform: translate(-50%, -50%); transition: left 0.09s linear, background var(--dur); box-shadow: 0 0 8px var(--accent-glow); }
+.tuner-needle.in-tune { background: #34d6a0; box-shadow: 0 0 10px color-mix(in srgb, #34d6a0 60%, transparent); }
+.tuner-meter-scale { display: flex; justify-content: space-between; margin-top: 6px; font-size: var(--text-xs); color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.tuner-strings { display: flex; gap: 8px; }
+.tuner-string { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--surface-2); color: var(--text-dim); font-weight: 800; font-family: var(--font-geist-mono), ui-monospace, monospace; }
+.tuner-string.active { background: var(--accent); color: var(--accent-contrast); }
+.tuner-error { color: var(--danger); font-size: var(--text-sm); text-align: center; margin: 0; }
+.tuner-btn { background: var(--accent); color: var(--accent-contrast); border: none; border-radius: var(--radius-full); padding: 12px 28px; font-weight: 800; font-size: var(--text-md); cursor: pointer; min-height: 44px; }
+.tuner-btn.on { background: var(--surface-2); color: var(--text); }
+.tuner-hint { color: var(--text-dim); font-size: var(--text-sm); text-align: center; margin: 0; max-width: 32ch; }
+
 /* ----- Fretboard ----- */
 
 .fretboard-wrap {
