@@ -8,6 +8,8 @@ import { Legend } from './Legend';
 import { ChordBrowser } from './ChordBrowser';
 import { CustomList } from './CustomList';
 import { ChordSearch, type SearchHit } from './ChordSearch';
+import { CHORDS, ROOTS } from '@/lib/music';
+import { hasVoicing } from '@/lib/fretboard';
 
 export default function PianoApp() {
   const activeTab = useAppStore((s) => s.activeTab);
@@ -15,6 +17,7 @@ export default function PianoApp() {
   const hideRoot = useAppStore((s) => s.hideRoot);
   const setActiveTab = useAppStore((s) => s.setActiveTab);
   const setChordView = useAppStore((s) => s.setChordView);
+  const chordView = useAppStore((s) => s.chordView);
 
   const [scrollTo, setScrollTo] = useState<{ id: string; n: number } | null>(null);
   const nonce = useRef(0);
@@ -41,7 +44,16 @@ export default function PianoApp() {
   }, [scrollTo]);
 
   const onHit = (hit: SearchHit) => {
-    if (hit.kind === 'scale') setChordView('piano'); // scales are piano-only
+    if (hit.kind === 'scale') {
+      setChordView('piano'); // scales are piano-only
+    } else if (chordView === 'guitar') {
+      /* In guitar view a chord with no common voicing is filtered out of the
+       * grid, so the search would land on nothing. Fall back to piano so the
+       * result is always visible. */
+      const root = ROOTS.find((r) => r.short === hit.rootShort);
+      const suffix = CHORDS[hit.idx]?.suffix ?? '';
+      if (!root || !hasVoicing(root.pc, suffix)) setChordView('piano');
+    }
     setActiveTab(hit.rootShort);
     nonce.current += 1;
     setScrollTo({ id: hit.kind === 'chord' ? `cc-${hit.idx}` : `sc-${hit.idx}`, n: nonce.current });

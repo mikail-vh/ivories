@@ -78,8 +78,11 @@ export function restoreBackup(text: string, opts: { includePrefs?: boolean } = {
 
   let prefsApplied = false;
   if (opts.includePrefs) {
-    const prefsPayload = data.prefs as { state?: Record<string, unknown> } | null;
-    if (prefsPayload?.state && typeof prefsPayload.state === 'object') {
+    const prefsPayload = data.prefs as { state?: Record<string, unknown>; version?: number } | null;
+    /* Only apply prefs from a backup written by the current store schema, so we
+     * never merge a stale-shaped state that predates a migration. Songs still
+     * import regardless. */
+    if (prefsPayload?.state && typeof prefsPayload.state === 'object' && prefsPayload.version === 2) {
       useAppStore.setState(prefsPayload.state as Partial<ReturnType<typeof useAppStore.getState>>);
       prefsApplied = true;
     }

@@ -2252,6 +2252,13 @@ body.light .chip { color: var(--accent-text); }
 }
 .stage-speed::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: #fff; border: none; cursor: pointer; }
 .stage-speed::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: none; }
+/* Bigger touch target for the speed slider on phones (Stage Mode is built
+ * for a phone on a stand). */
+@media (pointer: coarse) {
+  .stage-speed { height: 32px; width: 104px; }
+  .stage-speed::-webkit-slider-thumb { width: 24px; height: 24px; margin-top: -10px; }
+  .stage-speed::-moz-range-thumb { width: 24px; height: 24px; }
+}
 .stage-scroll {
   flex: 1;
   overflow-y: auto;

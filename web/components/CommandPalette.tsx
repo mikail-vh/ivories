@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { rehydrateSongs, songsRepo } from '@/lib/storage';
+import { useFocusTrap } from './useFocusTrap';
 
 type Item = {
   id: string;
@@ -29,18 +30,22 @@ export function CommandPalette() {
   const [active, setActive] = useState(0);
   const [songs, setSongs] = useState<Item[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const openRef = useRef(false);
   useEffect(() => { openRef.current = open; }, [open]);
+  useFocusTrap(dialogRef, open);
 
   /* Global shortcut. Resets happen here (an event handler, not an effect);
-   * the palette can only be opened via this path, so every open is clean. */
+   * the palette can only be opened via this path, so every open is clean.
+   * Suppressed in Stage Mode — the palette would render behind the opaque
+   * full-screen reader and silently capture keystrokes. */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         if (openRef.current) {
           setOpen(false);
-        } else {
+        } else if (!document.body.classList.contains('stage-mode')) {
           setQuery('');
           setActive(0);
           setOpen(true);
@@ -65,8 +70,6 @@ export function CommandPalette() {
         })),
       );
     });
-    const t = setTimeout(() => inputRef.current?.focus(), 30);
-    return () => clearTimeout(t);
   }, [open]);
 
   const results = useMemo(() => {
@@ -96,7 +99,7 @@ export function CommandPalette() {
   let lastGroup = '';
   return (
     <div className="cmdk-backdrop" onMouseDown={() => setOpen(false)} role="presentation">
-      <div className="cmdk glass-sheet anim-pop" role="dialog" aria-label="Command palette" onMouseDown={(e) => e.stopPropagation()}>
+      <div ref={dialogRef} className="cmdk glass-sheet anim-pop" role="dialog" aria-modal="true" aria-label="Command palette" onMouseDown={(e) => e.stopPropagation()}>
         <div className="cmdk-input-row">
           <SearchIcon />
           <input

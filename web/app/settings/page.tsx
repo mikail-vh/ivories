@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAppStore, AUDIO_DEFAULTS, THEME_PRESETS, ACCENT_SWATCHES, type ChordView, type GuitarTone, type FretboardOrientation, type NavPlacement, type ThemeMode } from '@/lib/store';
 import { midisFor, playChord, playGuitarChord, playNote } from '@/lib/audio';
 import { downloadBackup, restoreBackup } from '@/lib/backup';
+import { rehydrateSongs } from '@/lib/storage';
 import { generateVoicings, voicingMidis } from '@/lib/fretboard';
 import { ChordDiagram } from '@/components/song/ChordDiagram';
 
@@ -41,6 +42,9 @@ export default function SettingsPage() {
 
   useEffect(() => {
     useAppStore.persist.rehydrate();
+    /* Hydrate the songs store too — without this, importing a backup would
+     * merge into an empty in-memory map and overwrite the saved library. */
+    rehydrateSongs();
   }, []);
 
   const onImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,6 +52,7 @@ export default function SettingsPage() {
     e.target.value = '';
     if (!file) return;
     try {
+      await rehydrateSongs(); // ensure the live library is loaded before merging
       const text = await file.text();
       const { songs } = restoreBackup(text, { includePrefs: true });
       setDataMsg({ kind: 'ok', text: `Imported ${songs} song${songs === 1 ? '' : 's'}.` });

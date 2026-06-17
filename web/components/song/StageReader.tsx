@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SongRenderer } from './SongRenderer';
 import { useAutoscroll } from './useAutoscroll';
+import { useFocusTrap } from '../useFocusTrap';
 import type { Song } from '@/lib/songs';
 
 const MIN_SCALE = 1;
@@ -13,10 +14,12 @@ const MAX_SCALE = 2.4;
  * hands-free auto-scroll. The deliberate inverse of the glass aesthetic. */
 export function StageReader({ song, onExit }: { song: Song; onExit: () => void }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1.5);
   const [speed, setSpeed] = useState(1);
   const getEl = useCallback(() => scrollRef.current, []);
   const autoscroll = useAutoscroll(getEl, speed);
+  useFocusTrap(rootRef, true);
 
   /* Hide global chrome + lock to a calm near-black backdrop while mounted. */
   useEffect(() => {
@@ -31,9 +34,12 @@ export function StageReader({ song, onExit }: { song: Song; onExit: () => void }
     let lock: { release: () => Promise<void> } | null = null;
     let cancelled = false;
     const acquire = async () => {
+      if (cancelled) return;
       try {
         const wl = (navigator as WakeLockNav).wakeLock;
-        if (wl && !cancelled) lock = await wl.request('screen');
+        if (!wl) return;
+        if (lock) { try { await lock.release(); } catch { /* already gone */ } lock = null; }
+        if (!cancelled) lock = await wl.request('screen');
       } catch { /* denied / unsupported — fine */ }
     };
     acquire();
@@ -58,7 +64,7 @@ export function StageReader({ song, onExit }: { song: Song; onExit: () => void }
   const stepScale = (d: number) => setScale((s) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, +(s + d).toFixed(2))));
 
   return (
-    <div className="stage-reader" role="dialog" aria-label={`${song.title} — stage mode`}>
+    <div ref={rootRef} className="stage-reader" role="dialog" aria-modal="true" aria-label={`${song.title} — stage mode`}>
       <header className="stage-bar">
         <div className="stage-bar-title">
           <strong>{song.title}</strong>

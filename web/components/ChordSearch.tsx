@@ -18,7 +18,9 @@ export function resolveSearch(query: string): SearchHit | null {
   const q = query.trim();
   if (!q) return null;
 
-  const p = parseChordSymbol(q);
+  /* Note letters must be uppercase for the parser; users type "am", "cmaj7". */
+  const cq = q.charAt(0).toUpperCase() + q.slice(1);
+  const p = parseChordSymbol(cq);
   if (p) {
     const chord = findKnownChord(p.quality);
     if (chord) {
@@ -32,14 +34,19 @@ export function resolveSearch(query: string): SearchHit | null {
 
   const m = q.match(/^([A-Ga-g][#b♯♭]?)\s+(.+)$/);
   if (m) {
-    const rp = parseChordSymbol(m[1]);
+    const rp = parseChordSymbol(m[1].toUpperCase());
     const word = m[2].toLowerCase().trim();
     if (rp) {
-      const sidx = SCALES.findIndex(
-        (s) => s.suffix.toLowerCase() === word ||
-          s.label.toLowerCase().includes(word) ||
-          word.includes(s.suffix.toLowerCase()),
-      );
+      /* Prefer exact suffix/label matches over a loose substring, so
+       * "major pentatonic" hits Major pentatonic, not Major scale. */
+      const exact = (s: typeof SCALES[number]) => {
+        const suf = s.suffix.toLowerCase();
+        const lab = s.label.toLowerCase();
+        return suf === word || lab === word || lab === `${word} scale` || lab === `${word} mode`
+          || lab.replace(/ (scale|mode)$/, '') === word;
+      };
+      let sidx = SCALES.findIndex(exact);
+      if (sidx < 0) sidx = SCALES.findIndex((s) => s.label.toLowerCase().includes(word));
       const rootShort = ROOTS.find((r) => r.pc === rp.rootPc)?.short;
       if (sidx >= 0 && rootShort) {
         return { rootShort, kind: 'scale', idx: sidx, label: `${NOTE_NAMES_SHARP[rp.rootPc]} ${SCALES[sidx].label}` };
