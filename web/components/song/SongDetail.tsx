@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useSong, songsRepo, rehydrateSongs } from '@/lib/storage';
+import { useSetlist, rehydrateSetlists } from '@/lib/setlists';
 import { useAppStore } from '@/lib/store';
 import {
   parseChordPro,
@@ -120,6 +122,29 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
   const markSongOpened = useAppStore((s) => s.markSongOpened);
 
   useEffect(() => { markSongOpened(song.id); }, [song.id, markSongOpened]);
+
+  /* Set-aware navigation: when opened from a setlist (?setlist=<id>), show a
+   * prev/next bar so you can play straight through the running order. */
+  const searchParams = useSearchParams();
+  const setlistId = searchParams.get('setlist');
+  const setlist = useSetlist(setlistId ?? '');
+  useEffect(() => { if (setlistId) rehydrateSetlists(); }, [setlistId]);
+  const setNav = useMemo(() => {
+    if (!setlistId || !setlist) return null;
+    const idx = setlist.songIds.indexOf(song.id);
+    if (idx < 0) return null;
+    const at = (j: number) => {
+      const sid = setlist.songIds[j];
+      return { id: sid, title: songsRepo.get(sid)?.title ?? 'Untitled' };
+    };
+    return {
+      name: setlist.name,
+      pos: idx + 1,
+      total: setlist.songIds.length,
+      prev: idx > 0 ? at(idx - 1) : null,
+      next: idx < setlist.songIds.length - 1 ? at(idx + 1) : null,
+    };
+  }, [setlistId, setlist, song.id]);
 
   const songMainRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLElement>(null);
@@ -365,6 +390,26 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
           setSpeed={setAutoscrollSpeed}
           onStage={() => setStage(true)}
         />
+      )}
+
+      {setNav && (
+        <nav className="setlist-nav" aria-label="Setlist navigation">
+          {setNav.prev ? (
+            <Link className="setlist-nav-btn prev" href={`/songs/${setNav.prev.id}?setlist=${setlistId}&i=${setNav.pos - 2}`}>
+              <span className="setlist-nav-dir">← Prev</span>
+              <span className="setlist-nav-title">{setNav.prev.title}</span>
+            </Link>
+          ) : <span className="setlist-nav-btn placeholder" aria-hidden="true" />}
+          <Link className="setlist-nav-pos" href="/setlists" title={setNav.name}>
+            {setNav.name} · {setNav.pos}/{setNav.total}
+          </Link>
+          {setNav.next ? (
+            <Link className="setlist-nav-btn next" href={`/songs/${setNav.next.id}?setlist=${setlistId}&i=${setNav.pos}`}>
+              <span className="setlist-nav-dir">Next →</span>
+              <span className="setlist-nav-title">{setNav.next.title}</span>
+            </Link>
+          ) : <span className="setlist-nav-btn placeholder" aria-hidden="true" />}
+        </nav>
       )}
 
       {showPalette && (

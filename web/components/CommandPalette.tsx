@@ -16,6 +16,7 @@ type Item = {
 const DESTINATIONS: Item[] = [
   { id: 'home', label: 'Home', sub: 'Dashboard', href: '/', group: 'Go to' },
   { id: 'songs', label: 'Songs', sub: 'Your library', href: '/songs', group: 'Go to' },
+  { id: 'setlists', label: 'Setlists', sub: 'Play-through lists', href: '/setlists', group: 'Go to' },
   { id: 'chords', label: 'Chords', sub: 'Cheat sheet', href: '/chords', group: 'Go to' },
   { id: 'playground', label: 'Playground', sub: 'Scales & fretboard', href: '/playground', group: 'Go to' },
   { id: 'settings', label: 'Settings', sub: 'Theme & sound', href: '/settings', group: 'Go to' },

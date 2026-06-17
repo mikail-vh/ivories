@@ -8,6 +8,7 @@ import type { SongMeta } from '@/lib/songs';
 
 const QUICK_LINKS = [
   { href: '/songs', label: 'Songs', sub: 'Your library', icon: <SongsIcon /> },
+  { href: '/setlists', label: 'Setlists', sub: 'Play-through lists', icon: <ListIcon /> },
   { href: '/chords', label: 'Chords', sub: 'Cheat sheet', icon: <ChordsIcon /> },
   { href: '/playground', label: 'Playground', sub: 'Scales & fretboard', icon: <PlayIcon /> },
   { href: '/settings', label: 'Settings', sub: 'Theme & sound', icon: <GearIcon /> },
@@ -103,6 +104,13 @@ function SongsIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+    </svg>
+  );
+}
+function ListIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M8 6h13M8 12h13M8 18h13" /><circle cx="3.5" cy="6" r="1.3" fill="currentColor" /><circle cx="3.5" cy="12" r="1.3" fill="currentColor" /><circle cx="3.5" cy="18" r="1.3" fill="currentColor" />
     </svg>
   );
 }

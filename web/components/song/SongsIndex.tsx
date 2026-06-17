@@ -52,9 +52,12 @@ export function SongsIndex() {
           <h1>Songs</h1>
           <p>Your library — paste in lyrics and chords, see them rendered with a piano alongside.</p>
         </div>
-        <button className="btn-primary" onClick={() => setImporting(true)}>
-          + New song
-        </button>
+        <div className="songs-header-actions">
+          <Link href="/setlists" className="btn-ghost">Setlists</Link>
+          <button className="btn-primary" onClick={() => setImporting(true)}>
+            + New song
+          </button>
+        </div>
       </header>
 
       {hydrated && songs.length > 0 && (
