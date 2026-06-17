@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useSong, songsRepo, rehydrateSongs } from '@/lib/storage';
+import { useSetlist, rehydrateSetlists } from '@/lib/setlists';
 import { useAppStore } from '@/lib/store';
 import {
   parseChordPro,
@@ -16,10 +18,14 @@ import {
   type StickyNote as StickyNoteType,
 } from '@/lib/songs';
 import { NOTE_NAMES_SHARP } from '@/lib/music';
+import { suggestCapo } from '@/lib/capo';
 import { SongRenderer, type CanvasHandlers } from './SongRenderer';
 import { ChordPalette } from './ChordPalette';
 import { Roadmap } from './Roadmap';
 import { SpotifyPanel } from './SpotifyPanel';
+import { SongToolbar } from './SongToolbar';
+import { StageReader } from './StageReader';
+import { useAutoscroll } from './useAutoscroll';
 import { StickyNote, NOTE_COLORS } from './StickyNote';
 import { extractTrackId } from '@/lib/spotify';
 import type { GridPreset, LyricSize } from '@/lib/store';
@@ -98,6 +104,7 @@ export function SongDetail({ id }: { id: string }) {
 function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: boolean }) {
   const [editingMeta, setEditingMeta] = useState(false);
   const [editingBody, setEditingBody] = useState(false);
+  const [stage, setStage] = useState(false);
   const layout = useAppStore((s) => s.songLayout);
   const setSongLayout = useAppStore((s) => s.setSongLayout);
   const gridPreset = useAppStore((s) => s.songGridPreset);
@@ -109,10 +116,45 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
   const setChordPaletteSide = useAppStore((s) => s.setChordPaletteSide);
   const lyricSize = useAppStore((s) => s.lyricSize);
   const setLyricSize = useAppStore((s) => s.setLyricSize);
+  const lyricsOnly = useAppStore((s) => s.lyricsOnly);
+  const toggleLyricsOnly = useAppStore((s) => s.toggleLyricsOnly);
+  const autoscrollSpeed = useAppStore((s) => s.autoscrollSpeed);
+  const setAutoscrollSpeed = useAppStore((s) => s.setAutoscrollSpeed);
+  const markSongOpened = useAppStore((s) => s.markSongOpened);
+
+  useEffect(() => { markSongOpened(song.id); }, [song.id, markSongOpened]);
+
+  /* Set-aware navigation: when opened from a setlist (?setlist=<id>), show a
+   * prev/next bar so you can play straight through the running order. */
+  const searchParams = useSearchParams();
+  const setlistId = searchParams.get('setlist');
+  const setlist = useSetlist(setlistId ?? '');
+  useEffect(() => { if (setlistId) rehydrateSetlists(); }, [setlistId]);
+  const setNav = useMemo(() => {
+    if (!setlistId || !setlist) return null;
+    const idx = setlist.songIds.indexOf(song.id);
+    if (idx < 0) return null;
+    const at = (j: number) => {
+      const sid = setlist.songIds[j];
+      return { id: sid, title: songsRepo.get(sid)?.title ?? 'Untitled' };
+    };
+    return {
+      name: setlist.name,
+      pos: idx + 1,
+      total: setlist.songIds.length,
+      prev: idx > 0 ? at(idx - 1) : null,
+      next: idx < setlist.songIds.length - 1 ? at(idx + 1) : null,
+    };
+  }, [setlistId, setlist, song.id]);
 
   const songMainRef = useRef<HTMLDivElement>(null);
+  const pageRef = useRef<HTMLElement>(null);
   const trayRef = useRef<HTMLDivElement>(null);
   const [draggingSection, setDraggingSection] = useState(false);
+
+  /* Hands-free auto-scroll drives the song-page scroll container. */
+  const getScrollEl = useCallback(() => pageRef.current, []);
+  const autoscroll = useAutoscroll(getScrollEl, autoscrollSpeed);
 
   const notesByLine = useMemo(() => {
     const map: Record<string, StickyNoteType[]> = {};
@@ -124,6 +166,8 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
     () => parseChordPro(song.body).sections,
     [song.body],
   );
+
+  const capoSuggestion = useMemo(() => suggestCapo(song), [song]);
 
   const firstLineId = useMemo(() => {
     for (const sec of parsedSections) {
@@ -166,6 +210,12 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
   const arrangement = song.arrangement;
   const effectiveArrangement = layout === 'grid' ? arrangement : undefined;
   const customizing = layout === 'grid' && arrangement !== undefined;
+
+  /* Pause auto-scroll whenever we leave the reader (edit/customize modes hide
+   * the toolbar but the scroll loop lives here on the parent). */
+  useEffect(() => {
+    if (editingBody || customizing) autoscroll.stop();
+  }, [editingBody, customizing, autoscroll]);
   const { tray: traySections } = useMemo(
     () => applyArrangement(parsedSections, effectiveArrangement),
     [parsedSections, effectiveArrangement],
@@ -261,10 +311,13 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
     showPalette ? 'with-palette' : '',
     showPalette && chordPaletteSide === 'left' ? 'palette-left' : '',
     customizing ? 'customizing' : '',
+    lyricsOnly ? 'lyrics-only' : '',
   ].filter(Boolean).join(' ');
 
+  const keyLabel = effectiveKeyLabel(song);
+
   return (
-    <main className={pageClass}>
+    <main className={pageClass} ref={pageRef}>
       {/* Song meta is a top-level sibling (not inside `.song-main`) so CSS
        * order can place it above the palette on narrow viewports while the
        * palette goes between meta and body. */}
@@ -283,6 +336,16 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
                 <KeyChip song={song} />
                 {song.tempo && <span className="chip">{song.tempo} bpm</span>}
                 {song.capo && <span className="chip">capo {song.capo}</span>}
+                {capoSuggestion && song.capo !== String(capoSuggestion.fret) && (
+                  <button
+                    type="button"
+                    className="chip chip-suggest"
+                    title={`Capo ${capoSuggestion.fret} → play easy open shapes: ${capoSuggestion.shapes.join('  ')}`}
+                    onClick={() => updateSong({ capo: String(capoSuggestion.fret) })}
+                  >
+                    ✨ Try capo {capoSuggestion.fret}
+                  </button>
+                )}
               </div>
               <button
                 type="button"
@@ -324,6 +387,43 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
           </div>
         )}
       </header>
+
+      {!editingBody && !customizing && (
+        <SongToolbar
+          transpose={song.transpose}
+          onTranspose={(t) => updateSong({ transpose: t })}
+          keyLabel={keyLabel}
+          lyricSize={lyricSize}
+          setLyricSize={setLyricSize}
+          lyricsOnly={lyricsOnly}
+          toggleLyricsOnly={toggleLyricsOnly}
+          scrolling={autoscroll.playing}
+          onToggleScroll={autoscroll.toggle}
+          speed={autoscrollSpeed}
+          setSpeed={setAutoscrollSpeed}
+          onStage={() => setStage(true)}
+        />
+      )}
+
+      {setNav && (
+        <nav className="setlist-nav" aria-label="Setlist navigation">
+          {setNav.prev ? (
+            <Link className="setlist-nav-btn prev" href={`/songs/${setNav.prev.id}?setlist=${setlistId}&i=${setNav.pos - 2}`}>
+              <span className="setlist-nav-dir">← Prev</span>
+              <span className="setlist-nav-title">{setNav.prev.title}</span>
+            </Link>
+          ) : <span className="setlist-nav-btn placeholder" aria-hidden="true" />}
+          <Link className="setlist-nav-pos" href="/setlists" title={setNav.name}>
+            {setNav.name} · {setNav.pos}/{setNav.total}
+          </Link>
+          {setNav.next ? (
+            <Link className="setlist-nav-btn next" href={`/songs/${setNav.next.id}?setlist=${setlistId}&i=${setNav.pos}`}>
+              <span className="setlist-nav-dir">Next →</span>
+              <span className="setlist-nav-title">{setNav.next.title}</span>
+            </Link>
+          ) : <span className="setlist-nav-btn placeholder" aria-hidden="true" />}
+        </nav>
+      )}
 
       {showPalette && (
         <div className="song-rail">
@@ -387,6 +487,8 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
           onClose={toggleRoadmap}
         />
       )}
+
+      {stage && <StageReader song={song} onExit={() => setStage(false)} />}
     </main>
   );
 }

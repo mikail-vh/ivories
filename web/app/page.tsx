@@ -1,5 +1,9 @@
-import { redirect } from 'next/navigation';
+import { Home } from '@/components/Home';
 
-export default function Home() {
-  redirect('/chords');
+export const metadata = {
+  title: 'Music',
+};
+
+export default function HomePage() {
+  return <Home />;
 }

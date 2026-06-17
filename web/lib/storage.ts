@@ -56,11 +56,13 @@ export const songsRepo = {
   },
 };
 
+const EMPTY_LIST: SongMeta[] = [];
+
 export function useSongList(): SongMeta[] {
   return useSyncExternalStore(
     (cb) => useSongsStore.subscribe(cb),
     () => songsListSnapshot(),
-    () => [],
+    () => EMPTY_LIST,
   );
 }
 

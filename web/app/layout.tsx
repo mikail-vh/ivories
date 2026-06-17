@@ -2,6 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppNav } from "@/components/AppNav";
+import { ViewToolbar } from "@/components/ViewToolbar";
+import { ThemeController } from "@/components/ThemeController";
+import { CommandPalette } from "@/components/CommandPalette";
+import { Onboarding } from "@/components/Onboarding";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,7 +38,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
       <body className="mode-expanded" suppressHydrationWarning>
+        <ThemeController />
         <AppNav />
+        <ViewToolbar />
+        <CommandPalette />
+        <Onboarding />
         {children}
       </body>
     </html>

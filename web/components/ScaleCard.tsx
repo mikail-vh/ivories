@@ -7,18 +7,19 @@ import { Scale, scaleTitle, noteListString, pitchClassesFor, startPcForRoot } fr
 import { useAppStore } from '@/lib/store';
 import { midisFor, playSequence, playNote } from '@/lib/audio';
 
-export function ScaleCard({ rootPc, scale, idx, reorder }: {
+export function ScaleCard({ rootPc, scale, idx, reorder, domId }: {
   rootPc: number;
   scale: Scale;
   idx: number;
   reorder?: React.ReactNode;
+  domId?: string;
 }) {
   const hideRoot = useAppStore(s => s.hideRoot);
   const pcs = pitchClassesFor(rootPc, scale.intervals);
   const midis = midisFor(rootPc, scale.intervals);
 
   return (
-    <div className="card">
+    <div className="card" id={domId}>
       <div className="card-header">
         <div className="card-titles">
           <h3 className="card-title">{scaleTitle(rootPc, scale)}</h3>

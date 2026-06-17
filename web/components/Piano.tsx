@@ -10,6 +10,8 @@ type PianoProps = {
   /** Minimum number of extra semitones to render on each side of the octave. */
   padKeys?: number;
   hideRoot?: boolean;
+  /** Draw a note-name label on every key, not just highlighted/root ones. */
+  showAllLabels?: boolean;
   /** When provided, individual keys become clickable and call this with the MIDI number. */
   onPress?: (midi: number) => void;
 };
@@ -22,6 +24,7 @@ export function Piano({
   startPc = 0,
   padKeys = 0,
   hideRoot = false,
+  showAllLabels = false,
   onPress,
 }: PianoProps) {
   const effRoot = hideRoot ? -1 : rootPc;
@@ -82,6 +85,12 @@ export function Piano({
             textAnchor="middle" fontSize={9} fill="#fff" fontWeight={700}
             className="font-mono pointer-events-none">{NOTE_NAMES_SHARP[pc]}</text>
         );
+      } else if (showAllLabels) {
+        labels.push(
+          <text key={`bl-${s}`} x={x + BLACK_W / 2} y={BLACK_H - 8}
+            textAnchor="middle" fontSize={9} fill="#888" fontWeight={600}
+            className="font-mono pointer-events-none">{NOTE_NAMES_SHARP[pc]}</text>
+        );
       }
     } else {
       const x = whiteIdx * WHITE_W;
@@ -95,6 +104,12 @@ export function Piano({
         labels.push(
           <text key={`wl-${s}`} x={x + WHITE_W / 2} y={WHITE_H - 14}
             textAnchor="middle" fontSize={14} fill="#fff" fontWeight={700}
+            className="font-mono pointer-events-none">{NOTE_NAMES_SHARP[pc]}</text>
+        );
+      } else if (showAllLabels) {
+        labels.push(
+          <text key={`wl-${s}`} x={x + WHITE_W / 2} y={WHITE_H - 14}
+            textAnchor="middle" fontSize={12} fill="#666" fontWeight={500}
             className="font-mono pointer-events-none">{NOTE_NAMES_SHARP[pc]}</text>
         );
       }
