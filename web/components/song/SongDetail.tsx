@@ -18,6 +18,7 @@ import {
   type StickyNote as StickyNoteType,
 } from '@/lib/songs';
 import { NOTE_NAMES_SHARP } from '@/lib/music';
+import { suggestCapo } from '@/lib/capo';
 import { SongRenderer, type CanvasHandlers } from './SongRenderer';
 import { ChordPalette } from './ChordPalette';
 import { Roadmap } from './Roadmap';
@@ -165,6 +166,8 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
     () => parseChordPro(song.body).sections,
     [song.body],
   );
+
+  const capoSuggestion = useMemo(() => suggestCapo(song), [song]);
 
   const firstLineId = useMemo(() => {
     for (const sec of parsedSections) {
@@ -333,6 +336,16 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
                 <KeyChip song={song} />
                 {song.tempo && <span className="chip">{song.tempo} bpm</span>}
                 {song.capo && <span className="chip">capo {song.capo}</span>}
+                {capoSuggestion && song.capo !== String(capoSuggestion.fret) && (
+                  <button
+                    type="button"
+                    className="chip chip-suggest"
+                    title={`Capo ${capoSuggestion.fret} → play easy open shapes: ${capoSuggestion.shapes.join('  ')}`}
+                    onClick={() => updateSong({ capo: String(capoSuggestion.fret) })}
+                  >
+                    ✨ Try capo {capoSuggestion.fret}
+                  </button>
+                )}
               </div>
               <button
                 type="button"

@@ -2200,6 +2200,16 @@ body.light .home-hero h1 {
 }
 body.light .chip { color: var(--accent-text); }
 
+/* Clickable "suggested capo" chip. */
+.chip-suggest {
+  cursor: pointer;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  border-color: transparent;
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+.chip-suggest:hover { background: var(--accent-softer); border-color: var(--accent); }
+
 /* Guitar diagrams in the song chord-strip: keep cards compact. */
 .palette-guitar .palette-card .chord-diagram { max-height: 168px; }
 
