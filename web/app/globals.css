@@ -1186,6 +1186,42 @@ body.light .settings-hero-text h1 {
 .preview-btn.primary:hover { filter: brightness(1.06); }
 .preview-btn svg { width: 14px; height: 14px; flex: 0 0 auto; }
 
+/* ===== Settings tab bar ===== */
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 5px;
+  margin: 0 0 20px;
+  border-radius: var(--radius-full);
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.settings-tabs::-webkit-scrollbar { display: none; }
+.settings-tab {
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 8px 16px;
+  min-height: 40px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text-dim);
+  white-space: nowrap;
+  transition: color var(--dur-fast), background var(--dur-fast);
+}
+.settings-tab:hover { color: var(--text); }
+.settings-tab.active { background: var(--accent); color: var(--accent-contrast); }
+
+/* Show only the active tab's groups. */
+.settings-page[data-tab="appearance"] .settings-group:not(.group-appearance),
+.settings-page[data-tab="sound"] .settings-group:not(.group-sound),
+.settings-page[data-tab="chords"] .settings-group:not(.group-chords),
+.settings-page[data-tab="data"] .settings-group:not(.group-data) { display: none; }
+
 .settings-group {
   background: var(--bg-elev);
   border: 1px solid var(--border);
@@ -2424,6 +2460,43 @@ body.light .chip { color: var(--accent-text); }
   white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis;
 }
 .setlist-nav-pos:hover { color: var(--text); }
+
+/* ========== First-run onboarding ========== */
+.onboard-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fade-in var(--dur) var(--ease-out);
+}
+.onboard {
+  width: 100%;
+  max-width: 460px;
+  border-radius: var(--radius-xl);
+  padding: clamp(20px, 5vw, 32px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.onboard-head { text-align: center; }
+.onboard-eyebrow { margin: 0; font-size: var(--text-sm); font-weight: 700; color: var(--accent-text); letter-spacing: 0.4px; }
+.onboard-head h2 { margin: 2px 0 0; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.5px; }
+.onboard-sub { margin: 8px 0 0; color: var(--text-dim); font-size: var(--text-md); }
+.onboard-features { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.onboard-feature { display: flex; gap: var(--space-3); align-items: flex-start; }
+.onboard-feature-icon { font-size: 1.4rem; flex: 0 0 auto; line-height: 1.3; }
+.onboard-feature-text { display: flex; flex-direction: column; gap: 2px; }
+.onboard-feature-title { font-weight: 700; }
+.onboard-feature-body { font-size: var(--text-sm); color: var(--text-dim); line-height: 1.4; }
+.onboard-cta { align-self: stretch; padding: 12px; font-size: var(--text-md); min-height: 46px; }
 
 /* ========== Command palette (⌘K) ========== */
 .cmdk-backdrop {

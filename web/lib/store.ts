@@ -111,6 +111,8 @@ type State = {
    * first, capped) for the home dashboard's "jump back in" shelf. */
   favoriteSongs: string[];
   recentSongs: string[];
+  /* First-run tour: false until the user dismisses the welcome overlay. */
+  onboarded: boolean;
 } & AudioSettings;
 
 type Actions = {
@@ -140,6 +142,7 @@ type Actions = {
   setNavPlacement: (placement: NavPlacement) => void;
   toggleFavoriteSong: (id: string) => void;
   markSongOpened: (id: string) => void;
+  setOnboarded: (v: boolean) => void;
 
   isFavorited: (item: FavoriteItem) => boolean;
   toggleFavorite: (item: FavoriteItem) => void;
@@ -186,6 +189,7 @@ export const useAppStore = create<State & Actions>()(
       navPlacement: 'bottom',
       favoriteSongs: [],
       recentSongs: [],
+      onboarded: false,
       ...AUDIO_DEFAULTS,
 
       setActiveTab: (tab) => set({ activeTab: tab }),
@@ -224,6 +228,7 @@ export const useAppStore = create<State & Actions>()(
         const next = [id, ...get().recentSongs.filter((x) => x !== id)].slice(0, 12);
         set({ recentSongs: next });
       },
+      setOnboarded: (v) => set({ onboarded: v }),
 
       isFavorited: (item) => {
         const page = get().pages.find(p => p.id === get().activePageId);
@@ -290,10 +295,10 @@ export const useAppStore = create<State & Actions>()(
     {
       name: 'piano-app:v1',
       skipHydration: true,
-      version: 2,
+      version: 3,
       /* v0/v1 stored a binary `theme: 'dark' | 'light'`. v2 splits theming into
-       * mode + preset + custom accent + reduce-glass. Map the old flag forward
-       * and seed the new fields so existing libraries upgrade cleanly. */
+       * mode + preset + custom accent + reduce-glass. v3 adds the onboarding
+       * flag — existing users are marked onboarded so they don't see the tour. */
       migrate: (persisted, version) => {
         const s = (persisted ?? {}) as Record<string, unknown>;
         if (version < 2) {
@@ -305,6 +310,9 @@ export const useAppStore = create<State & Actions>()(
           if (s.reduceGlass === undefined) s.reduceGlass = false;
           if (s.albumArtAccent === undefined) s.albumArtAccent = true;
           delete s.theme;
+        }
+        if (version < 3) {
+          s.onboarded = true; // don't show the tour to people who already use the app
         }
         return s as unknown as State & Actions;
       },

@@ -8,6 +8,14 @@ import { rehydrateSongs } from '@/lib/storage';
 import { generateVoicings, voicingMidis } from '@/lib/fretboard';
 import { ChordDiagram } from '@/components/song/ChordDiagram';
 
+type SettingsTab = 'appearance' | 'sound' | 'chords' | 'data';
+const SETTINGS_TABS: { id: SettingsTab; label: string }[] = [
+  { id: 'appearance', label: 'Appearance' },
+  { id: 'sound', label: 'Sound' },
+  { id: 'chords', label: 'Chords' },
+  { id: 'data', label: 'Data' },
+];
+
 export default function SettingsPage() {
   const audioVolume = useAppStore(s => s.audioVolume);
   const audioSustain = useAppStore(s => s.audioSustain);
@@ -39,6 +47,7 @@ export default function SettingsPage() {
 
   const fileRef = useRef<HTMLInputElement>(null);
   const [dataMsg, setDataMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [tab, setTab] = useState<SettingsTab>('appearance');
 
   useEffect(() => {
     useAppStore.persist.rehydrate();
@@ -62,7 +71,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <main className="settings-page">
+    <main className="settings-page" data-tab={tab}>
       <header className="settings-hero">
         <div className="settings-hero-text">
           <h1>Settings</h1>
@@ -88,7 +97,22 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      <section className="settings-group">
+      <nav className="settings-tabs glass-bar" role="tablist" aria-label="Settings sections">
+        {SETTINGS_TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            className={`settings-tab ${tab === t.id ? 'active' : ''}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </nav>
+
+      <section className="settings-group group-appearance">
         <header className="group-head">
           <span className="group-icon"><PaletteIcon /></span>
           <div>
@@ -191,7 +215,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="settings-group">
+      <section className="settings-group group-sound">
         <header className="group-head">
           <span className="group-icon"><OutputIcon /></span>
           <div>
@@ -207,7 +231,7 @@ export default function SettingsPage() {
         />
       </section>
 
-      <section className="settings-group">
+      <section className="settings-group group-sound">
         <header className="group-head">
           <span className="group-icon"><PianoIcon /></span>
           <div>
@@ -231,7 +255,7 @@ export default function SettingsPage() {
         />
       </section>
 
-      <section className="settings-group">
+      <section className="settings-group group-chords">
         <header className="group-head">
           <span className="group-icon"><GuitarIcon /></span>
           <div>
@@ -301,7 +325,7 @@ export default function SettingsPage() {
         <ChordPreview chordView={chordView} guitarTone={guitarTone} orientation={fretboardOrientation} flipped={fretboardFlipped} />
       </section>
 
-      <section className="settings-group">
+      <section className="settings-group group-appearance">
         <header className="group-head">
           <span className="group-icon"><NavIcon /></span>
           <div>
@@ -327,7 +351,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="settings-group">
+      <section className="settings-group group-chords">
         <header className="group-head">
           <span className="group-icon"><SongIcon /></span>
           <div>
@@ -352,7 +376,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="settings-group">
+      <section className="settings-group group-data">
         <header className="group-head">
           <span className="group-icon"><DataIcon /></span>
           <div>
@@ -383,7 +407,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="settings-group">
+      <section className="settings-group group-sound">
         <header className="group-head">
           <span className="group-icon"><SpaceIcon /></span>
           <div>
@@ -407,16 +431,18 @@ export default function SettingsPage() {
         />
       </section>
 
-      <footer className="settings-footer">
-        <span className="settings-defaults-note">
-          Defaults: vol {pct(AUDIO_DEFAULTS.audioVolume)} · sustain {AUDIO_DEFAULTS.audioSustain.toFixed(2)}× ·
-          bright {pct(AUDIO_DEFAULTS.audioBrightness)} · reverb {pct(AUDIO_DEFAULTS.audioReverb)} ·
-          decay {AUDIO_DEFAULTS.audioReverbSize.toFixed(2)}s
-        </span>
-        <button type="button" className="reset-btn" onClick={resetAudio}>
-          Restore defaults
-        </button>
-      </footer>
+      {tab === 'sound' && (
+        <footer className="settings-footer">
+          <span className="settings-defaults-note">
+            Defaults: vol {pct(AUDIO_DEFAULTS.audioVolume)} · sustain {AUDIO_DEFAULTS.audioSustain.toFixed(2)}× ·
+            bright {pct(AUDIO_DEFAULTS.audioBrightness)} · reverb {pct(AUDIO_DEFAULTS.audioReverb)} ·
+            decay {AUDIO_DEFAULTS.audioReverbSize.toFixed(2)}s
+          </span>
+          <button type="button" className="reset-btn" onClick={resetAudio}>
+            Restore defaults
+          </button>
+        </footer>
+      )}
     </main>
   );
 }
