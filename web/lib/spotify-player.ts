@@ -43,6 +43,7 @@ type SpotifyPlayerInstance = {
   setVolume: (volume: number) => Promise<void>;
   getVolume: () => Promise<number>;
   getCurrentState: () => Promise<RawState | null>;
+  activateElement?: () => Promise<void>;
 };
 
 type RawState = {
@@ -101,6 +102,9 @@ export type SpotifyPlayer = {
   togglePlay: () => Promise<void>;
   seek: (positionMs: number) => Promise<void>;
   setVolume: (volume: number) => Promise<void>;
+  /* Unlock the SDK's audio element — must be called from a user gesture on
+   * browsers with autoplay restrictions, or playback silently won't start. */
+  activate: () => Promise<void>;
   /* Last fatal error from the SDK or API. Cleared on a successful play. */
   error: Error | null;
   /* Subscribe to state/error/ready changes. Returns an unsubscribe fn. */
@@ -177,11 +181,27 @@ export async function createPlayer(initialVolume = 0.7): Promise<SpotifyPlayer> 
   /* Start playing a given track on our SDK device. Spotify's SDK doesn't have
    * a direct loadUri — we use the Web API's PUT /v1/me/player/play with the
    * device_id to point at the in-browser device we just created. */
+  /* Make our SDK device the active Connect device. This is what actually
+   * clears "Device not found" — the device exists in the SDK but Spotify's
+   * Connect backend won't accept a play targeting it until it's transferred. */
+  const transfer = async (token: string) => {
+    if (!deviceId) return;
+    await fetch('https://api.spotify.com/v1/me/player', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ device_ids: [deviceId], play: false }),
+    }).catch(() => {});
+  };
+
   const play = async (trackId: string) => {
+    if (error instanceof PremiumRequiredError) throw error; // don't hammer a non-Premium account
     const a = await refreshIfNeeded();
     if (!a) throw new Error('Not signed in');
     if (!deviceId) throw new Error('Player not ready');
-    const res = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+
+    await transfer(a.accessToken);
+
+    const attempt = () => fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${a.accessToken}`,
@@ -189,14 +209,35 @@ export async function createPlayer(initialVolume = 0.7): Promise<SpotifyPlayer> 
       },
       body: JSON.stringify({ uris: [`spotify:track:${trackId}`] }),
     });
+
+    /* Brief retry for the transfer/registration lag — but NOT an indefinite
+     * loop, since a persistent 404 means the device isn't a valid Connect
+     * target (almost always a non-Premium account). */
+    let res = await attempt();
+    for (let i = 0; i < 4 && res.status === 404; i++) {
+      await new Promise((r) => setTimeout(r, 500));
+      await transfer(a.accessToken);
+      res = await attempt();
+    }
+
     if (res.status === 403) {
       error = new PremiumRequiredError();
       notify();
       throw error;
     }
+    if (res.status === 404) {
+      /* Don't clobber a Premium error the SDK may have already raised. */
+      if (!(error instanceof PremiumRequiredError)) {
+        error = new Error('Spotify couldn’t find the player device. The Web Playback SDK only streams for Spotify Premium accounts — free accounts can search and link tracks but can’t play in-app.');
+      }
+      notify();
+      throw error;
+    }
     if (!res.ok && res.status !== 204) {
       const text = await res.text().catch(() => '');
-      throw new Error(`Spotify play failed: ${res.status} ${text}`);
+      error = new Error(`Spotify play failed: ${res.status}${text ? ` — ${text}` : ''}`);
+      notify();
+      throw error;
     }
     error = null;
     notify();
@@ -213,6 +254,7 @@ export async function createPlayer(initialVolume = 0.7): Promise<SpotifyPlayer> 
     togglePlay: () => instance.togglePlay(),
     seek: (positionMs) => instance.seek(positionMs),
     setVolume: (volume) => instance.setVolume(volume),
+    activate: async () => { try { await instance.activateElement?.(); } catch { /* unsupported / already active */ } },
     subscribe: (cb) => { listeners.add(cb); return () => { listeners.delete(cb); }; },
     destroy: () => instance.disconnect(),
   };

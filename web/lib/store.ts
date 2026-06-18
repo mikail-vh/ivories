@@ -31,6 +31,7 @@ export const AUDIO_DEFAULTS: AudioSettings = {
 
 export type GridPreset = 'auto' | '2col' | '3col';
 export type LyricSize = 'sm' | 'md' | 'lg';
+export type SpotifyWidgetSize = 'sm' | 'md' | 'lg';
 export type ChordView = 'piano' | 'guitar';
 export type GuitarTone = 'acoustic' | 'electric';
 export type FretboardOrientation = 'vertical' | 'horizontal';
@@ -90,6 +91,8 @@ type State = {
   /* Auto-scroll speed multiplier for the song reader (0.25..4). Persisted so a
    * comfortable pace carries between songs. */
   autoscrollSpeed: number;
+  /* How much the inline Spotify now-playing widget shows. */
+  spotifyWidgetSize: SpotifyWidgetSize;
   /* Spotify embed volume (0..1). Persisted so users don't have to drop it
    * every time they open a song. Applied via the IFrame Embed API. */
   spotifyVolume: number;
@@ -133,6 +136,7 @@ type Actions = {
   setLyricSize: (size: LyricSize) => void;
   toggleLyricsOnly: () => void;
   setAutoscrollSpeed: (speed: number) => void;
+  setSpotifyWidgetSize: (size: SpotifyWidgetSize) => void;
   setSpotifyVolume: (volume: number) => void;
   setChordView: (view: ChordView) => void;
   setGuitarTone: (tone: GuitarTone) => void;
@@ -180,6 +184,7 @@ export const useAppStore = create<State & Actions>()(
       lyricSize: 'md',
       lyricsOnly: false,
       autoscrollSpeed: 1,
+      spotifyWidgetSize: 'md',
       spotifyVolume: 0.7,
       chordView: 'piano',
       guitarTone: 'acoustic',
@@ -213,6 +218,7 @@ export const useAppStore = create<State & Actions>()(
       setLyricSize: (size) => set({ lyricSize: size }),
       toggleLyricsOnly: () => set({ lyricsOnly: !get().lyricsOnly }),
       setAutoscrollSpeed: (speed) => set({ autoscrollSpeed: Math.max(0.25, Math.min(4, speed)) }),
+      setSpotifyWidgetSize: (size) => set({ spotifyWidgetSize: size }),
       setSpotifyVolume: (volume) => set({ spotifyVolume: Math.max(0, Math.min(1, volume)) }),
       setChordView: (view) => set({ chordView: view }),
       setGuitarTone: (tone) => set({ guitarTone: tone }),

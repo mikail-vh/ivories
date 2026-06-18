@@ -12,7 +12,9 @@ const TOKEN_URL = 'https://accounts.spotify.com/api/token';
 const TOKEN_KEY = 'music:spotify-auth:v1';
 const VERIFIER_KEY = 'music:spotify-verifier';
 const RETURN_URL_KEY = 'music:spotify-return-url';
-const SCOPES = ['streaming', 'user-modify-playback-state', 'user-read-playback-state', 'user-read-email'];
+/* The Web Playback SDK requires `streaming`, which Spotify only grants
+ * alongside `user-read-email` + `user-read-private`. */
+const SCOPES = ['streaming', 'user-read-email', 'user-read-private', 'user-modify-playback-state', 'user-read-playback-state'];
 
 export type SpotifyAuth = {
   accessToken: string;
@@ -63,6 +65,9 @@ export async function startLogin(): Promise<void> {
     redirect_uri: redirectUri(),
     code_challenge_method: 'S256',
     code_challenge: challenge,
+    /* Force the consent screen so a previously-granted (narrower) scope set
+     * can't leave us with a token missing `streaming`. */
+    show_dialog: 'true',
   });
   window.location.href = `${AUTH_URL}?${params.toString()}`;
 }

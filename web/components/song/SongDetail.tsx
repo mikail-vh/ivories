@@ -347,6 +347,7 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
                   </button>
                 )}
               </div>
+              <SpotifyPanel song={song} onChange={updateSong} />
               <button
                 type="button"
                 className="roadmap-shortcut"
@@ -440,8 +441,6 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
             highlight={draggingSection}
           />
         )}
-
-        <SpotifyPanel song={song} onChange={updateSong} />
 
         {editingBody ? (
           <BodyEditor
