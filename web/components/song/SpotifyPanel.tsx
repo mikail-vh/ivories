@@ -16,7 +16,7 @@ import {
   PremiumRequiredError,
   type SpotifyPlayer,
 } from '@/lib/spotify-player';
-import { useAppStore, type SpotifyWidgetSize } from '@/lib/store';
+import { useAppStore } from '@/lib/store';
 import { useFocusTrap } from '../useFocusTrap';
 import { SpotifyPicker } from './SpotifyPicker';
 
@@ -25,8 +25,10 @@ type Props = {
   onChange: (patch: Partial<Song>) => void;
 };
 
-/* Compact Spotify "now-playing presence" that lives next to the song title.
- * Tiny inline footprint (size S/M/L), expands into a full-control modal. */
+/* "Titlerule" — a now-playing line that lives as a third row inside the song
+ * title block. Collapsed it reads as an underlined caption whose underline
+ * fills with live progress; on hover/focus a grouped-glass control pill morphs
+ * open in place (play, art, scrub, expand) without the text reflowing. */
 export function SpotifyPanel({ song, onChange }: Props) {
   const auth = useSpotifyAuth();
   const [picking, setPicking] = useState(false);
@@ -39,7 +41,7 @@ export function SpotifyPanel({ song, onChange }: Props) {
   };
 
   return (
-    <span className="sf-host">
+    <div className="np-host">
       {auth && trackId ? (
         <SpotifyController
           auth={auth}
@@ -50,24 +52,23 @@ export function SpotifyPanel({ song, onChange }: Props) {
       ) : (
         <button
           type="button"
-          className="sf-chip sf-idle"
+          className="np-rule np-idle"
+          data-state="idle"
           onClick={() => (trackId ? startLogin() : setPicking(true))}
           title={trackId ? 'Sign in to play this track' : 'Add a Spotify track'}
         >
-          <SpotifyMark />
-          <span className="sf-idle-label">{trackId ? 'Sign in' : 'Spotify'}</span>
+          <span className="np-icon"><SpotifyMark /></span>
+          <span className="np-text"><b className="np-track">{trackId ? 'Sign in to play' : 'Add Spotify track'}</b></span>
         </button>
       )}
 
       {picking && (
         <SpotifyPicker initialQuery={initialQuery} onPick={onPick} onClose={() => setPicking(false)} />
       )}
-    </span>
+    </div>
   );
 }
 
-/* Owns the Web Playback SDK player (mounted only when signed in + a track is
- * chosen, so its hooks always run). Renders the inline presence + modal. */
 function SpotifyController({
   auth, trackId, onChangeTrack, onRemove,
 }: {
@@ -76,8 +77,6 @@ function SpotifyController({
   onChangeTrack: () => void;
   onRemove: () => void;
 }) {
-  const size = useAppStore((s) => s.spotifyWidgetSize);
-  const setSize = useAppStore((s) => s.setSpotifyWidgetSize);
   const storeVolume = useAppStore((s) => s.spotifyVolume);
   const setStoreVolume = useAppStore((s) => s.setSpotifyVolume);
   const initialVolume = useRef(useAppStore.getState().spotifyVolume).current;
@@ -105,23 +104,30 @@ function SpotifyController({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once per auth
   }, [auth.refreshToken]);
 
-  /* Playback starts on the user pressing play (a gesture) — not auto on ready.
-   * Auto-playing fired API calls with no user gesture (autoplay-blocked) and,
-   * on non-Premium accounts, spammed 404s + showed an error before any click. */
-  const playerReady = player?.ready ?? false;
-
   useEffect(() => {
     player?.setVolume(storeVolume).catch(() => {});
   }, [storeVolume, player]);
 
   const state = player?.state;
   const isPremiumError = player?.error instanceof PremiumRequiredError;
+  const playerReady = player?.ready ?? false;
   const connecting = !playerReady && !isPremiumError;
-  const progress = state && state.duration > 0 ? state.position / state.duration : 0;
+  const isPlaying = !!state && state.paused === false;
 
-  /* Runs from a click (user gesture), so first unlock the SDK audio element
-   * (autoplay policy), then toggle if a track is loaded or (re)load it —
-   * which also clears the SDK's "no list was loaded" error. */
+  /* The SDK only emits state on discrete events, so tick a re-render while
+   * playing and read the interpolated livePosition() — makes progress glide. */
+  useEffect(() => {
+    if (!isPlaying) return;
+    const id = setInterval(() => force((v) => v + 1), 250);
+    return () => clearInterval(id);
+  }, [isPlaying]);
+
+  const position = player?.livePosition() ?? 0;
+  const duration = state?.duration ?? 0;
+  const liveProgress = duration > 0 ? Math.min(1, position / duration) : 0;
+
+  /* Gesture handler: unlock audio (autoplay policy), then toggle if loaded or
+   * (re)load — which also clears the SDK "no list was loaded" error. */
   const togglePlayback = async () => {
     if (!player) return;
     await player.activate();
@@ -131,21 +137,23 @@ function SpotifyController({
 
   return (
     <>
-      <InlinePresence
-        size={size}
+      <NowPlayingRule
+        state={state}
         connecting={connecting}
         premiumError={isPremiumError}
-        state={state}
-        progress={progress}
+        position={position}
+        duration={duration}
+        liveProgress={liveProgress}
         onToggle={togglePlayback}
+        onSeek={(ms) => player?.seek(ms)}
         onExpand={() => setExpanded(true)}
       />
       {expanded && (
         <SpotifyModal
-          size={size}
-          setSize={setSize}
           state={state}
-          progress={progress}
+          position={position}
+          duration={duration}
+          liveProgress={liveProgress}
           connecting={connecting}
           premiumError={isPremiumError}
           error={player?.error ?? null}
@@ -164,61 +172,83 @@ function SpotifyController({
 
 type UIState = SpotifyPlayer['state'] | undefined;
 
-function InlinePresence({
-  size, connecting, premiumError, state, progress, onToggle, onExpand,
+function NowPlayingRule({
+  state, connecting, premiumError, position, duration, liveProgress, onToggle, onSeek, onExpand,
 }: {
-  size: SpotifyWidgetSize;
+  state: UIState;
   connecting: boolean;
   premiumError: boolean;
-  state: UIState;
-  progress: number;
+  position: number;
+  duration: number;
+  liveProgress: number;
   onToggle: () => void;
+  onSeek: (ms: number) => void;
   onExpand: () => void;
 }) {
-  const title = state?.trackName ?? (connecting ? 'Connecting…' : premiumError ? 'Premium needed' : '—');
+  const dataState = connecting ? 'connecting'
+    : premiumError ? 'premium'
+    : !state?.trackName ? 'idle'
+    : state.paused ? 'paused' : 'playing';
+  const playing = state?.paused === false;
+  const showEq = dataState === 'playing' || dataState === 'paused';
 
   return (
-    <span className={`sf-chip sf-${size} ${premiumError ? 'sf-warn' : ''}`}>
+    <div
+      className={`np-rule ${premiumError ? 'is-premium' : ''}`}
+      data-state={dataState}
+      style={{ '--p': liveProgress } as React.CSSProperties}
+      tabIndex={0}
+      role="group"
+      aria-label={state?.trackName ? `Now playing: ${state.trackName}${state.artistName ? ` by ${state.artistName}` : ''}` : 'Spotify'}
+    >
+      <span className="np-icon" aria-hidden="true">
+        {showEq ? <span className="np-eq"><i /><i /><i /></span> : <SpotifyMark />}
+      </span>
       <button
         type="button"
-        className={`sf-play ${connecting ? 'sf-play-busy' : ''}`}
-        onClick={onToggle}
+        className="np-play"
+        onClick={(e) => { e.stopPropagation(); onToggle(); }}
         disabled={connecting || premiumError}
-        aria-label={state?.paused === false ? 'Pause' : 'Play'}
+        aria-label={playing ? 'Pause' : 'Play'}
       >
-        {state?.paused === false ? <PauseIcon /> : <PlayIcon />}
+        {playing ? <PauseIcon /> : <PlayIcon />}
       </button>
-
-      {size === 'lg' && state?.albumImageUrl && (
+      {state?.albumImageUrl && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={state.albumImageUrl} alt="" className="sf-cover" width={30} height={30} />
+        <img className="np-art" src={state.albumImageUrl} alt="" width={28} height={28} />
       )}
-
-      {size !== 'sm' && (
-        <span className="sf-meta">
-          <span className="sf-title">{title}</span>
-          {size === 'lg' && state?.artistName && <span className="sf-artist">{state.artistName}</span>}
-          {(size === 'md' || size === 'lg') && !connecting && !premiumError && (
-            <span className="sf-progress" aria-hidden="true"><span style={{ width: `${Math.round(progress * 100)}%` }} /></span>
-          )}
-        </span>
-      )}
-
-      <button type="button" className="sf-expand" onClick={onExpand} aria-label="Open Spotify controls" title="Expand">
+      <span className="np-text">
+        <b className="np-track">{state?.trackName ?? (connecting ? 'Connecting…' : premiumError ? 'Premium needed to play in-app' : 'Spotify')}</b>
+        {state?.artistName && <><span className="np-dash"> — </span><span className="np-artist">{state.artistName}</span></>}
+      </span>
+      <span className="np-times" aria-hidden="true"><em>{formatTime(position)}</em><em>{formatTime(duration)}</em></span>
+      <input
+        type="range"
+        className="np-scrub"
+        min={0}
+        max={duration || 0}
+        step={1000}
+        value={Math.min(position, duration || 0)}
+        onChange={(e) => onSeek(parseInt(e.target.value, 10))}
+        aria-label="Seek"
+        disabled={!duration}
+        style={{ '--pct': `${Math.round(liveProgress * 100)}%` } as React.CSSProperties}
+      />
+      <button type="button" className="np-expand" onClick={(e) => { e.stopPropagation(); onExpand(); }} aria-label="Open Spotify controls">
         <ExpandIcon />
       </button>
-    </span>
+    </div>
   );
 }
 
 function SpotifyModal({
-  size, setSize, state, progress, connecting, premiumError, error, volume, setVolume,
+  state, position, duration, liveProgress, connecting, premiumError, error, volume, setVolume,
   onToggle, onSeek, onChangeTrack, onRemove, onClose,
 }: {
-  size: SpotifyWidgetSize;
-  setSize: (s: SpotifyWidgetSize) => void;
   state: UIState;
-  progress: number;
+  position: number;
+  duration: number;
+  liveProgress: number;
   connecting: boolean;
   premiumError: boolean;
   error: Error | null;
@@ -268,16 +298,16 @@ function SpotifyModal({
             </div>
 
             <div className="spotify-player-scrub">
-              <span className="spotify-time">{formatTime(state?.position ?? 0)}</span>
+              <span className="spotify-time">{formatTime(position)}</span>
               <input
-                type="range" min={0} max={state?.duration ?? 0} step={1000}
-                value={state?.position ?? 0}
+                type="range" min={0} max={duration} step={1000}
+                value={Math.min(position, duration)}
                 onChange={(e) => onSeek(parseInt(e.target.value, 10))}
                 aria-label="Position" className="spotify-scrub"
-                style={{ '--pct': `${Math.round(progress * 100)}%` } as React.CSSProperties}
-                disabled={!state?.duration}
+                style={{ '--pct': `${Math.round(liveProgress * 100)}%` } as React.CSSProperties}
+                disabled={!duration}
               />
-              <span className="spotify-time">{formatTime(state?.duration ?? 0)}</span>
+              <span className="spotify-time">{formatTime(duration)}</span>
             </div>
 
             <div className="spotify-controls">
@@ -297,14 +327,6 @@ function SpotifyModal({
         {error && !premiumError && <p className="spotify-error-note">{error.message}</p>}
 
         <div className="sf-modal-foot">
-          <div className="sf-size" role="radiogroup" aria-label="Widget size">
-            {(['sm', 'md', 'lg'] as const).map((s) => (
-              <button key={s} type="button" role="radio" aria-checked={size === s}
-                className={size === s ? 'active' : ''} onClick={() => setSize(s)}>
-                {s === 'sm' ? 'S' : s === 'md' ? 'M' : 'L'}
-              </button>
-            ))}
-          </div>
           <span className="sf-modal-foot-spacer" />
           <button type="button" className="link-btn" onClick={onChangeTrack}>Change track</button>
           <button type="button" className="link-btn" onClick={signOut}>Sign out</button>
@@ -337,16 +359,16 @@ function signOut() {
 
 function SpotifyMark() {
   return (
-    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="currentColor">
+    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="currentColor">
       <path d="M12 0a12 12 0 1 0 12 12A12 12 0 0 0 12 0Zm5.5 17.3a.75.75 0 0 1-1 .3c-2.7-1.6-6.1-2-10.2-1.1a.75.75 0 1 1-.3-1.5c4.4-1 8.2-.6 11.2 1.2a.75.75 0 0 1 .3 1.1Zm1.5-3.2a.94.94 0 0 1-1.3.3c-3.1-1.9-7.8-2.4-11.5-1.3a.94.94 0 0 1-.6-1.8c4.2-1.3 9.3-.7 12.9 1.5a.94.94 0 0 1 .5 1.3Zm.1-3.4c-3.7-2.2-9.8-2.4-13.3-1.3a1.13 1.13 0 1 1-.7-2.1c4.1-1.3 10.8-1 15 1.5a1.13 1.13 0 0 1-1 2Z" />
     </svg>
   );
 }
 function PlayIcon() {
-  return <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>;
+  return <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>;
 }
 function PauseIcon() {
-  return <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zm8 0h4v14h-4z" /></svg>;
+  return <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zm8 0h4v14h-4z" /></svg>;
 }
 function ExpandIcon() {
   return (

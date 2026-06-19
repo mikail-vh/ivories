@@ -102,6 +102,9 @@ export type SpotifyPlayer = {
   togglePlay: () => Promise<void>;
   seek: (positionMs: number) => Promise<void>;
   setVolume: (volume: number) => Promise<void>;
+  /* Interpolated playback position (ms): the SDK only emits state on discrete
+   * events, so we advance position against the wall clock while playing. */
+  livePosition: () => number;
   /* Unlock the SDK's audio element — must be called from a user gesture on
    * browsers with autoplay restrictions, or playback silently won't start. */
   activate: () => Promise<void>;
@@ -134,6 +137,7 @@ export async function createPlayer(initialVolume = 0.7): Promise<SpotifyPlayer> 
   let deviceId: string | null = null;
   let ready = false;
   let state: PlayerState = toState(null);
+  let stateTs = 0; // wall-clock ms when `state` was last refreshed
   let error: Error | null = null;
 
   const instance = new SDK.Player({
@@ -156,6 +160,7 @@ export async function createPlayer(initialVolume = 0.7): Promise<SpotifyPlayer> 
   });
   instance.addListener('player_state_changed', (raw) => {
     state = toState(raw as RawState | null);
+    stateTs = Date.now();
     notify();
   });
   instance.addListener('account_error', () => {
@@ -254,6 +259,11 @@ export async function createPlayer(initialVolume = 0.7): Promise<SpotifyPlayer> 
     togglePlay: () => instance.togglePlay(),
     seek: (positionMs) => instance.seek(positionMs),
     setVolume: (volume) => instance.setVolume(volume),
+    livePosition: () => {
+      if (!state.duration) return state.position;
+      if (state.paused) return state.position;
+      return Math.min(state.duration, state.position + (Date.now() - stateTs));
+    },
     activate: async () => { try { await instance.activateElement?.(); } catch { /* unsupported / already active */ } },
     subscribe: (cb) => { listeners.add(cb); return () => { listeners.delete(cb); }; },
     destroy: () => instance.disconnect(),

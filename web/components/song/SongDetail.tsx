@@ -330,6 +330,7 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
             <div className="song-meta-titles">
               <h1>{song.title}</h1>
               {song.artist && <p className="song-meta-artist">{song.artist}</p>}
+              <SpotifyPanel song={song} onChange={updateSong} />
             </div>
             <div className="song-meta-aside">
               <div className="song-meta-chips">
@@ -347,7 +348,6 @@ function SongDetailLoaded({ song, showPalette }: { song: Song; showPalette: bool
                   </button>
                 )}
               </div>
-              <SpotifyPanel song={song} onChange={updateSong} />
               <button
                 type="button"
                 className="roadmap-shortcut"
